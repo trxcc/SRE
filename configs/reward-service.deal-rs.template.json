@@ -1,0 +1,42 @@
+{
+  "project_root": "<SET_BY_LAUNCHER>",
+  "queue_root": "<SET_BY_LAUNCHER>",
+  "state_root": "<SET_BY_LAUNCHER>",
+  "models": {
+    "<SET_BY_LAUNCHER>": {
+      "endpoint_file": "<SET_BY_LAUNCHER>",
+      "job": "<SET_BY_LAUNCHER>",
+      "api_key_file": "<SET_LOCALLY>",
+      "api_model": "<SET_BY_LAUNCHER>"
+    }
+  },
+  "dataset": "researchclaw",
+  "gt_scope": "anchor_only",
+  "gt_all_candidates_every_step": false,
+  "rubric_agent": {
+    "temperature": 0.7,
+    "timeout_sec": 600,
+    "max_tool_calls": 30,
+    "max_tokens": 8192,
+    "context_window": 99328
+  },
+  "score_agent": {
+    "temperature": 0.7,
+    "timeout_sec": 600,
+    "max_tool_calls": 30,
+    "max_tokens": 32768,
+    "context_window": 99328
+  },
+  "gt_timeout_sec": 2700,
+  "gt_concurrency_per_group": 1,
+  "rubric_prompt_path": "<SET_BY_LAUNCHER>",
+  "agent_concurrency_per_model": 64,
+  "group_workers": 32,
+  "self_reward_repeats": 3,
+  "candidate_count": 8,
+  "gt_judge": {
+    "base_url": "<SET_LOCALLY>",
+    "model": "<SET_LOCALLY>",
+    "api_key_file": "<SET_LOCALLY>"
+  }
+}

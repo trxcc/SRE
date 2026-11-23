@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.DS_Store
+
+# Local data, runs, checkpoints, and secrets
+data/
+runs/
+eval-runs/
+secrets/
+configs/*.local.env
+configs/local.env
+
+# Runtime generated symlinks/caches
+runtime/support/
+*.log

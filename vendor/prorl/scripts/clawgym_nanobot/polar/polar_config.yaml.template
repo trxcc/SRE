@@ -1,0 +1,65 @@
+polar_rollout_url: http://${POLAR_GATEWAY_HOST}:${POLAR_ROLLOUT_PORT}
+polar_reward_key: score
+polar_max_async_level: ${POLAR_MAX_ASYNC_LEVEL}
+polar_max_off_policy_steps: ${POLAR_MAX_OFF_POLICY_STEPS}
+polar_synchronous_policy_versions: ${POLAR_SYNCHRONOUS_POLICY_VERSIONS}
+polar_eval_max_concurrency: ${POLAR_EVAL_MAX_CONCURRENCY}
+polar_eval_infra_retries: ${POLAR_EVAL_INFRA_RETRIES}
+polar_request_timeout: ${POLAR_REQUEST_TIMEOUT}
+polar_callback_host: ${MASTER_ADDR}
+polar_min_complete_accept_fraction: ${POLAR_MIN_COMPLETE_ACCEPT_FRACTION}
+polar_max_low_complete_retries: ${POLAR_MAX_LOW_COMPLETE_RETRIES}
+polar_timeout_as_zero: ${POLAR_TIMEOUT_AS_ZERO}
+
+polar_task_template:
+  timeout_seconds: ${POLAR_TASK_TIMEOUT}
+  runtime:
+    backend: apptainer
+    image: clawgym-local
+    import_path: clawgym_nanobot.polar_runtime:ClawGymLocalRuntime
+    workdir: /polar/session/workspace
+    allow_internet: true
+    env:
+      HOME: /polar/session/home
+      PATH: /polar/session/workspace/.runtime/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      POLAR_FAILED_EXEC_LOG_DIR: "${POLAR_FAILED_EXEC_LOG_DIR}"
+      POLAR_FAILED_EXEC_LOG_MAX_BYTES: "${POLAR_FAILED_EXEC_LOG_MAX_BYTES}"
+      POLAR_FAILED_EXEC_LOG_MAX_CASES: "${POLAR_FAILED_EXEC_LOG_MAX_CASES}"
+    prepare:
+      - type: exec
+        # Workspace construction is trusted infrastructure, not agent code. It
+        # must retain the gateway identity because legacy task metadata may sit
+        # below root-only dataset directories. Landlock remains enabled, so the
+        # prepare command still cannot modify the canonical raw workspace.
+        env:
+          CLAWGYM_EXEC_DROP_PRIVILEGES: "0"
+        command: >-
+          python3 -m clawgym_nanobot.polar_workspace
+          --task-dir {sample.metadata.task_dir}
+          --workspace /polar/session/workspace
+  agent:
+${POLAR_AGENT_CONFIG}
+  builder:
+    strategy: prefix_merging
+    config:
+      realign_replayed_response: ${POLAR_PREFIX_REALIGN_REPLAYED_RESPONSE}
+      realign_max_next_response_tokens: ${POLAR_PREFIX_REALIGN_MAX_NEXT_RESPONSE_TOKENS}
+  evaluator:
+    strategy: ${POLAR_EVALUATOR_STRATEGY}
+    refresh_runtime: false
+    config:
+      task_dir: "{sample.metadata.task_dir}"
+      workspace: /polar/session/workspace
+      timeout_seconds: ${POLAR_EVALUATOR_TIMEOUT}
+      judge_worker_urls: "${WSCLAW_JUDGE_WORKER_URLS}"
+      judge_api_key: "${WSCLAW_JUDGE_API_KEY}"
+      judge_workers_per_node: ${WSCLAW_JUDGE_WORKERS_PER_NODE}
+      log_root: ${WSCLAW_TRAIN_JUDGE_LOG_DIR}
+      keep_case_artifacts: ${WSCLAW_TRAIN_KEEP_JUDGE_CASES}
+      retain_researchclaw_nanobot_logs: ${RESEARCHCLAW_KEEP_TRAIN_NANOBOT_LOGS}
+      retain_latest_eval_logs: ${CLAWGYM_KEEP_LATEST_EVAL_LOGS}
+      latest_eval_nanobot_log_root: ${NANOBOT_LOG_DIR}
+      latest_eval_judge_log_root: ${JUDGE_NANOBOT_LOG_DIR}
+      latest_eval_log_state_root: ${LATEST_EVAL_LOG_STATE_DIR}
+
+polar_task_id_template: clawgym-{rollout_id}-{sample.group_index}

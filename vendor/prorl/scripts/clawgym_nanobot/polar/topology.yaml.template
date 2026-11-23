@@ -1,0 +1,27 @@
+rollout:
+  host: 0.0.0.0
+  port: ${POLAR_ROLLOUT_PORT}
+  public_url: http://${POLAR_GATEWAY_HOST}:${POLAR_ROLLOUT_PORT}
+  dispatch_poll_interval_seconds: 0.1
+  callback_grace_seconds: 120
+
+gateway:
+  heartbeat_interval_seconds: 10
+  rollout_server_url: http://${POLAR_GATEWAY_HOST}:${POLAR_ROLLOUT_PORT}
+  completion_persistence:
+    enabled: false
+    max_field_bytes: 1048576
+    queue_size: 1024
+  nodes:
+    - id: clawgym-rollout-1
+      host: 0.0.0.0
+      port: ${POLAR_GATEWAY_PORT}
+      public_url: http://${POLAR_GATEWAY_HOST}:${POLAR_GATEWAY_PORT}
+      max_init_workers: ${POLAR_MAX_WORKERS_PER_NODE}
+      max_run_workers: ${POLAR_MAX_WORKERS_PER_NODE}
+      max_postrun_workers: ${POLAR_MAX_POSTRUN_WORKERS_PER_NODE}
+      model_served: ${POLAR_MODEL_SERVED}
+      inference:
+        engine: sglang
+        base_url: ${POLAR_PRIMARY_INFERENCE_BASE_URL}
+${POLAR_EXTRA_GATEWAY_NODES}

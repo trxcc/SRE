@@ -1,0 +1,97 @@
+{
+  "at": 1793887306.481486,
+  "source_base": "https://raw.githubusercontent.com/HKUDS/nanobot/e2e75c913f3524d4bc5b23487a4eed5329eef182/",
+  "files": [
+    {
+      "relative": "nanobot/skills/clawhub/SKILL.md",
+      "bytes": 1384,
+      "SHA": "623a6e31e97abb358854f08908263709a4a36ff7e643472ccb90ee6a7cc352e7"
+    },
+    {
+      "relative": "nanobot/skills/cron/SKILL.md",
+      "bytes": 1505,
+      "SHA": "bcb13a283061f97ae3ed0113f0cbdce9fd7f15298f70c4fd54d336f6f61a0d48"
+    },
+    {
+      "relative": "nanobot/skills/github/SKILL.md",
+      "bytes": 1374,
+      "SHA": "bd1c4b4acec5fa7af31c2e26d1d26e5854fd74e53071c9d782edfc011cdcc145"
+    },
+    {
+      "relative": "nanobot/skills/memory/SKILL.md",
+      "bytes": 1839,
+      "SHA": "2421337ad51143e84c54c44a7b10a4ef6c6552f51c8e210c677430793d40705c"
+    },
+    {
+      "relative": "nanobot/skills/skill-creator/SKILL.md",
+      "bytes": 19109,
+      "SHA": "0efd563abf220edabe046734a0cf30be72409b443e255619471c4073bd483268"
+    },
+    {
+      "relative": "nanobot/skills/summarize/SKILL.md",
+      "bytes": 2040,
+      "SHA": "6bd7eaac4ddcfab1b23535488229047feff002404b6170ddd5d95d74188919f5"
+    },
+    {
+      "relative": "nanobot/skills/tmux/SKILL.md",
+      "bytes": 4063,
+      "SHA": "906a130fb461ec9cef36674f17222a8365b0e6aac486768815d708caf7c1ac6e"
+    },
+    {
+      "relative": "nanobot/skills/weather/SKILL.md",
+      "bytes": 1168,
+      "SHA": "4de36473bf5292991d39b1289d0910b699e9553b6be75ec85b80ed0089706cb2"
+    },
+    {
+      "relative": "nanobot/templates/agent/cron_reminder.md",
+      "bytes": 359,
+      "SHA": "6c7203dabdd598cafe4b81ce48b84695870466c916efec34c14378b99132c700"
+    },
+    {
+      "relative": "nanobot/templates/agent/dream.md",
+      "bytes": 6758,
+      "SHA": "2ae2cd1c35aa8b461dada7055d4eb8ed407fd8b35739ebf5dbdf68b577ffdac3"
+    }
+  ],
+  "missing": [
+    {
+      "relative": "docs/skills.md",
+      "http_status": "404",
+      "exit": 0
+    },
+    {
+      "relative": "docs/tools.md",
+      "http_status": "404",
+      "exit": 0
+    },
+    {
+      "relative": "nanobot/skills/dream/SKILL.md",
+      "http_status": "404",
+      "exit": 0
+    },
+    {
+      "relative": "nanobot/skills/nanobot-upgrade-wizard/SKILL.md",
+      "http_status": "404",
+      "exit": 0
+    },
+    {
+      "relative": "nanobot/skills/web-search/SKILL.md",
+      "http_status": "404",
+      "exit": 0
+    },
+    {
+      "relative": "tests/agent/tools/test_loader.py",
+      "http_status": "404",
+      "exit": 0
+    },
+    {
+      "relative": "tests/test_tool_loader.py",
+      "http_status": "404",
+      "exit": 0
+    }
+  ],
+  "source_only": true,
+  "model_calls": 0,
+  "remote_writes": 0,
+  "dynamic_asset_inventory_not_yet_complete": true
+}

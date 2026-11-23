@@ -1,0 +1,25 @@
+MODEL_ARGS=(
+   --swiglu
+   --num-layers 36
+   --hidden-size 4096
+   --ffn-hidden-size 12288
+   --num-attention-heads 32
+   --group-query-attention
+   --num-query-groups 8
+   --position-embedding-type yarn
+   --disable-bias-linear
+   --normalization "RMSNorm"
+   --norm-epsilon 1e-6
+   --rotary-base "${MODEL_ARGS_ROTARY_BASE:-1000000}"
+   --rotary-scaling-factor 4.0
+   --yarn-original-max-position-embeddings 32768
+   --yarn-beta-fast 32
+   --yarn-beta-slow 1
+   --mscale 1.0
+   --mscale-all-dim 0.0
+   --yarn-correction-range-round-to-int
+   --vocab-size 151936
+   --kv-channels 128
+   --qk-layernorm
+   --untie-embeddings-and-output-weights
+)

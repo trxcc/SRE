@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical self score v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "slot_id", "criterion_scores", "weighted_score", "notes"],
+  "properties": {
+    "schema_version": {"const": "self_reward_score_v1"},
+    "slot_id": {"type": "string", "minLength": 1},
+    "criterion_scores": {
+      "type": "object",
+      "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+    },
+    "weighted_score": {"type": "number", "minimum": 0, "maximum": 1},
+    "notes": {"type": "string", "maxLength": 2000}
+  }
+}
+
