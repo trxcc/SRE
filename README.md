@@ -32,6 +32,7 @@ In deployment-time self-evolution, an assistant executes one live attempt per ar
 | **Rollout Group Structure** | **1 GT anchor + 7 SR** (`K=7`, 8 total) | **1 GT anchor + 7 SR** (`K=7`, 8 total) |
 | **GT Judge Scope** | Anchor-only (`gt_scope=anchor_only`) | Anchor-only (`gt_scope=anchor_only`) |
 | **Deliverable Hardgate** | **Enabled** (`CLAWGYM_ARTIFACT_VALIDITY_GATE=1`) | Enabled |
+| **Tool-Result Microcompact** | **Enabled** (`NANOBOT_MICROCOMPACT_ENABLED=1`) | **Disabled** (`NANOBOT_MICROCOMPACT_ENABLED=0`) |
 | **Self-Reward Repeats** | 3 (median valid score) | 3 (median valid score) |
 | **Train / Held-out Split** | 2,000 train (125 steps) / 200 test | 1,800 train (113 steps) / 200 test |
 | **Context / Max Output** | 64K / 8K | 72K / 16K (eval: 80K / 16K) |

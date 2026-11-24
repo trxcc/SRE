@@ -37,12 +37,14 @@ def main() -> int:
     ap.add_argument("--output-dir", type=Path, required=True, help="Directory to write per-task results and summary.json")
     ap.add_argument("--student-url", required=True, help="OpenAI-compatible student endpoint, e.g. http://127.0.0.1:8000/v1")
     ap.add_argument("--student-model", default="gemma4-e4b-it", help="Served model name for student endpoint")
+    ap.add_argument("--model-family", choices=["gemma4", "qwen35"], default="gemma4", help="Model family (controls default per-task timeout: 1200s gemma4, 1800s qwen35)")
     ap.add_argument("--student-api-key-file", type=Path, help="Optional chmod-600 API key file for student endpoint")
     ap.add_argument("--judge-url", required=True, help="OpenAI-compatible GT judge endpoint (paper uses Gemma4-31B-IT)")
     ap.add_argument("--judge-model", required=True, help="GT judge model name")
     ap.add_argument("--judge-api-key-file", type=Path, required=True, help="chmod-600 API key file for GT judge")
     ap.add_argument("--context-window", type=int, default=81920)
     ap.add_argument("--max-tokens", type=int, default=16384)
+    ap.add_argument("--task-timeout", type=int, default=0, help="Per-task timeout seconds (0 = recipe default: 1200 gemma4 / 1800 qwen35)")
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=1.0)
     ap.add_argument("--top-k", type=int, default=-1)
@@ -74,6 +76,7 @@ def main() -> int:
         if str(p) not in sys.path:
             sys.path.insert(0, str(p))
 
+    task_timeout = args.task_timeout if args.task_timeout > 0 else (1800 if args.model_family == "qwen35" else 1200)
     os.environ.update({
         "PROJECT_ROOT": str(ROOT / "vendor/prorl"),
         "NANOBOT_ROOT": str(ROOT / "vendor/nanobot"),
@@ -85,9 +88,15 @@ def main() -> int:
         "OPENCLAW_EVAL_MAX_TURNS": "1",
         "OPENCLAW_CONTEXT_WINDOW": str(args.context_window),
         "OPENCLAW_MAX_TOKENS": str(args.max_tokens),
+        "CLAWGYM_TASK_PROMPT_MODE": "original",
         "NANOBOT_MAX_TOOL_ITERATIONS": "200",
-        "NANOBOT_EVAL_TURN_TIMEOUT": "1200",
-        "NANOBOT_TASK_TIMEOUT": "1200",
+        "NANOBOT_EVAL_TURN_TIMEOUT": str(task_timeout),
+        "NANOBOT_TASK_TIMEOUT": str(task_timeout),
+        "NANOBOT_MICROCOMPACT_ENABLED": "0",
+        "CLAWGYM_ALLOW_MULTI_TOOL_CALLS": "1",
+        "CLAWGYM_NANOBOT_ENABLE_REALIGN": "1",
+        "CLAWGYM_NANOBOT_REASONING_CONTEXT_POLICY": "preserve",
+        "NANOBOT_STRIP_REASONING_CONTEXT": "0",
         "NANOBOT_ENABLE_THINKING": "1",
         "NANOBOT_GEMMA_TOOL_SCHEMA": "0",
         "NANOBOT_RL_DISABLED_TOOLS": "complete_goal,cron,generate_image,list_exec_sessions,long_task,message,my,notebook_edit,run_cli_app,spawn,web_fetch,web_search,write_stdin",

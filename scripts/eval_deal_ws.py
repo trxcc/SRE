@@ -70,6 +70,7 @@ def main() -> int:
     ap.add_argument("--generation-workers", type=int, default=8)
     ap.add_argument("--context-window", type=int, default=65536)
     ap.add_argument("--max-tokens", type=int, default=8192)
+    ap.add_argument("--task-timeout", type=int, default=0, help="Per-task timeout seconds (0 = recipe default: 1500 gemma4 / 1800 qwen35)")
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=1.0)
     ap.add_argument("--top-k", type=int, default=-1)
@@ -112,6 +113,7 @@ def main() -> int:
     work_root.mkdir(exist_ok=True)
     (out / "results").mkdir(exist_ok=True)
 
+    task_timeout = args.task_timeout if args.task_timeout > 0 else (1800 if args.model_family == "qwen35" else 1500)
     env_updates = {
         "PROJECT_ROOT": str(ROOT / "vendor/prorl"),
         "NANOBOT_ROOT": str(ROOT / "vendor/nanobot"),
@@ -123,9 +125,15 @@ def main() -> int:
         "OPENCLAW_EVAL_MAX_TURNS": "1",
         "OPENCLAW_CONTEXT_WINDOW": str(args.context_window),
         "OPENCLAW_MAX_TOKENS": str(args.max_tokens),
+        "CLAWGYM_TASK_PROMPT_MODE": "original",
         "NANOBOT_MAX_TOOL_ITERATIONS": "200",
-        "NANOBOT_EVAL_TURN_TIMEOUT": "1500",
-        "NANOBOT_TASK_TIMEOUT": "1500",
+        "NANOBOT_EVAL_TURN_TIMEOUT": str(task_timeout),
+        "NANOBOT_TASK_TIMEOUT": str(task_timeout),
+        "NANOBOT_MICROCOMPACT_ENABLED": "1",
+        "CLAWGYM_ALLOW_MULTI_TOOL_CALLS": "1",
+        "CLAWGYM_NANOBOT_ENABLE_REALIGN": "1",
+        "CLAWGYM_NANOBOT_REASONING_CONTEXT_POLICY": "preserve",
+        "NANOBOT_STRIP_REASONING_CONTEXT": "0",
         "NANOBOT_ENABLE_THINKING": "1",
         "NANOBOT_GEMMA_TOOL_SCHEMA": "1" if args.model_family == "gemma4" else "0",
         "NANOBOT_RL_DISABLED_TOOLS": "spawn,message,long_task,complete_goal",

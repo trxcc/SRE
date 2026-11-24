@@ -75,6 +75,7 @@ def validate_recovery_args(args):
         eval_resp = 16384
         eval_fn = "runtime.aligned_eval_recovery.generate_rollout"
         expected_async_level = "4"
+        expected_microcompact = "0"
     else:
         # DEAL-WS enforces the deterministic deliverable hardgate.
         if os.environ.get("CLAWGYM_ARTIFACT_VALIDITY_GATE") != "1":
@@ -88,6 +89,7 @@ def validate_recovery_args(args):
         eval_resp = 8192
         eval_fn = "clawgym_nanobot.eval_rollout.generate_rollout"
         expected_async_level = "2"
+        expected_microcompact = "1"
 
     exact = dict(
         train_backend=expected_backend,
@@ -141,6 +143,7 @@ def validate_recovery_args(args):
         "POLAR_MAX_OFF_POLICY_STEPS": "3",
         "SLIME_PAD_DYNAMIC_DP_SAMPLES": "0",
         "OPENCLAW_TRAIN_ORDER": "sequential",
+        "NANOBOT_MICROCOMPACT_ENABLED": expected_microcompact,
     }.items():
         if os.environ.get(key) != value:
             raise ValueError(f"Environment mismatch: {key}={os.environ.get(key)!r} != {value!r}")

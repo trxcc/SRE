@@ -1425,6 +1425,13 @@ class AgentRunner:
     @staticmethod
     def _microcompact(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Replace old compactable tool results with one-line summaries."""
+        if os.environ.get("NANOBOT_MICROCOMPACT_ENABLED", "1").strip().lower() in {
+            "0",
+            "false",
+            "no",
+            "off",
+        }:
+            return messages
         compactable_indices: list[int] = []
         for idx, msg in enumerate(messages):
             if msg.get("role") == "tool" and msg.get("name") in _COMPACTABLE_TOOLS:

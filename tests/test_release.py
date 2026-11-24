@@ -84,6 +84,8 @@ class DealReleaseTests(unittest.TestCase):
                 self.assertEqual(recipe["ROLLOUT_BATCH_SIZE"], "16", recipe_rel)
                 self.assertEqual(recipe["GLOBAL_BATCH_SIZE"], "128", recipe_rel)
                 self.assertEqual(recipe["CLAWGYM_ARTIFACT_VALIDITY_GATE"], "1", recipe_rel)
+                expected_mc = "1" if benchmark == "deal-ws" else "0"
+                self.assertEqual(recipe["NANOBOT_MICROCOMPACT_ENABLED"], expected_mc, recipe_rel)
                 self.assertEqual(int(recipe["NUM_ROLLOUT"]), spec["num_rollout"], recipe_rel)
 
     def test_configure_and_portable_contract_all_four_profiles(self):
@@ -291,7 +293,59 @@ class DealReleaseTests(unittest.TestCase):
         )
         payload = json.loads(proc.stdout)
         self.assertTrue(payload["verification"]["ok"], payload)
-        self.assertGreaterEqual(payload["verification"]["checks_passed"], 19)
+        self.assertGreaterEqual(payload["verification"]["checks_passed"], 20)
+
+    def test_nanobot_microcompact_env_toggle(self):
+        runner_path = ROOT / "vendor/nanobot/nanobot/agent/runner.py"
+        try:
+            sys.path.insert(0, str(ROOT / "vendor/nanobot"))
+            from nanobot.agent.runner import AgentRunner
+
+            microcompact = AgentRunner._microcompact
+        except ImportError:
+            # Bare CPU/dev environments (< Python 3.11 or without loguru): execute
+            # the exact _microcompact function & constants parsed from runner.py.
+            source = runner_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(runner_path))
+            ns: dict = {"os": os, "Any": object}
+            keep_names = {"_MICROCOMPACT_KEEP_RECENT", "_MICROCOMPACT_MIN_CHARS", "_COMPACTABLE_TOOLS"}
+            nodes = []
+            for node in tree.body:
+                if isinstance(node, ast.Assign) and any(
+                    isinstance(t, ast.Name) and t.id in keep_names for t in node.targets
+                ):
+                    nodes.append(node)
+                elif isinstance(node, ast.ClassDef) and node.name == "AgentRunner":
+                    for item in node.body:
+                        if isinstance(item, ast.FunctionDef) and item.name == "_microcompact":
+                            item.decorator_list = []
+                            nodes.append(item)
+            mod = ast.Module(body=nodes, type_ignores=[])
+            exec(compile(mod, str(runner_path), "exec"), ns)
+            microcompact = ns["_microcompact"]
+
+        long_payload = "x" * 800
+        messages = [
+            {"role": "tool", "name": "read_file", "content": long_payload}
+            for _ in range(12)
+        ]
+        old = os.environ.get("NANOBOT_MICROCOMPACT_ENABLED")
+        try:
+            os.environ["NANOBOT_MICROCOMPACT_ENABLED"] = "1"
+            compacted = microcompact(messages)
+            self.assertEqual(compacted[0]["content"], "[read_file result omitted from context]")
+            self.assertEqual(compacted[1]["content"], "[read_file result omitted from context]")
+            self.assertEqual(compacted[2]["content"], long_payload)
+
+            os.environ["NANOBOT_MICROCOMPACT_ENABLED"] = "0"
+            untouched = microcompact(messages)
+            self.assertEqual(untouched[0]["content"], long_payload)
+            self.assertEqual(untouched[1]["content"], long_payload)
+        finally:
+            if old is None:
+                os.environ.pop("NANOBOT_MICROCOMPACT_ENABLED", None)
+            else:
+                os.environ["NANOBOT_MICROCOMPACT_ENABLED"] = old
 
 
 if __name__ == "__main__":
