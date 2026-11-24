@@ -1,0 +1,65 @@
+{
+  "schema_version": "self_reward_rubric_v3",
+  "criteria": [
+    {
+      "id": "c1",
+      "criterion": "Desktop/q3_spend_audit.md reports the exact total Q3 software spend and per-department spend totals matching input/Desktop/q3_software_spend.csv.",
+      "expected": "Total Q3 spend = $68,700; Engineering = $32,100, Infrastructure = $15,000, Marketing = $10,500, Product = $8,400, Operations = $2,700.",
+      "target_paths": [
+        "Desktop/q3_spend_audit.md",
+        "input/Desktop/q3_software_spend.csv"
+      ],
+      "reason": "Direct arithmetic requirement from the user prompt verifiable from the source CSV.",
+      "weight": 1.0
+    },
+    {
+      "id": "c2",
+      "criterion": "Desktop/q3_spend_audit.md flags INV-302 ($19,500) and INV-304 ($10,500) as non-compliant vendors exceeding $10,000 without VP sign-off.",
+      "expected": "Both INV-302 (VectorStore Cloud, Engineering) and INV-304 (AdPulse Analytics, Marketing) are listed as policy violations.",
+      "target_paths": [
+        "Desktop/q3_spend_audit.md",
+        "input/Desktop/q3_software_spend.csv",
+        "input/Documents/budget_policy.md"
+      ],
+      "reason": "Core threshold rule in budget_policy.md rule 1.",
+      "weight": 1.0
+    },
+    {
+      "id": "c3",
+      "criterion": "Desktop/q3_spend_audit.md applies the Annual Continuity Waiver exception so INV-305 (DataVault Backup) is not classified as a policy violation.",
+      "expected": "INV-305 ($15,000, preapproved_exception=yes) is excluded from violations and not mixed with non-compliant items; INV-301, INV-303, INV-306 are also compliant.",
+      "target_paths": [
+        "Desktop/q3_spend_audit.md",
+        "input/Desktop/q3_software_spend.csv",
+        "input/Documents/budget_policy.md"
+      ],
+      "reason": "Policy rule 2 explicitly exempts preapproved_exception=yes; anchor feedback highlighted this exact failure mode.",
+      "weight": 1.0
+    },
+    {
+      "id": "c4",
+      "criterion": "Desktop/q3_spend_audit.md reports the exact net non-compliant dollar total after excluding pre-approved exceptions.",
+      "expected": "Net non-compliant total equals $30,000 ($19,500 + $10,500).",
+      "target_paths": [
+        "Desktop/q3_spend_audit.md",
+        "input/Desktop/q3_software_spend.csv"
+      ],
+      "reason": "Explicit prompt deliverable #3 derived from true violations only.",
+      "weight": 1.0
+    },
+    {
+      "id": "c5",
+      "criterion": "Desktop/q3_spend_audit.md provides concise remediation actions per owner naming the invoice ID, department, and retroactive approval or downgrade action for each true violation.",
+      "expected": "Actionable remediation items for Engineering (INV-302) and Marketing (INV-304), without demanding remediation for exempt INV-305.",
+      "target_paths": [
+        "Desktop/q3_spend_audit.md",
+        "input/Documents/budget_policy.md"
+      ],
+      "reason": "Explicit prompt deliverable #4 and policy rule 4.",
+      "weight": 1.0
+    }
+  ],
+  "limitations": [
+    "Only verifies the requested Markdown audit report; does not prescribe a specific prose template or table layout."
+  ]
+}

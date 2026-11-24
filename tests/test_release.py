@@ -235,6 +235,64 @@ class DealReleaseTests(unittest.TestCase):
             proc = subprocess.run(["bash", "-n", str(sh)], capture_output=True, text=True)
             self.assertEqual(proc.returncode, 0, f"bash -n failed for {sh}: {proc.stderr}")
 
+    def test_ws_workspace_scaffold_installer_has_all_templates(self):
+        sys.path.insert(0, str(ROOT / "vendor/prorl"))
+        from scripts.clawgym_nanobot import wsclaw_eval_only
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = Path(tmp) / "workspace"
+            ws.mkdir()
+            wsclaw_eval_only.install_workspace_scaffold(ws)
+            for rel in (
+                "AGENTS.md",
+                "SOUL.md",
+                "USER.md",
+                "TOOLS.md",
+                "HEARTBEAT.md",
+                ".gitignore",
+                "memory/MEMORY.md",
+            ):
+                target = ws / rel
+                self.assertTrue(target.is_file(), f"missing installed template: {rel}")
+                self.assertGreater(target.stat().st_size, 0, f"empty installed template: {rel}")
+
+    def test_no_git_ignored_vendor_sources(self):
+        if not (ROOT / ".git").exists():
+            return
+        proc = subprocess.run(
+            ["git", "-C", str(ROOT), "status", "--ignored", "-s", "vendor"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        ignored = [
+            line[3:].strip()
+            for line in proc.stdout.splitlines()
+            if line.startswith("!!") and not line.strip().endswith("__pycache__/")
+        ]
+        self.assertEqual(ignored, [], f"Git-ignored files detected under vendor/: {ignored[:10]}")
+
+    def test_verify_env_cpu_mode(self):
+        proc = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/verify_env.py"), "--mode", "cpu", "--json"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        payload = json.loads(proc.stdout)
+        self.assertTrue(payload["ok"], payload)
+
+    def test_workspace_demos_verify(self):
+        proc = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/build_workspace_demos.py"), "--verify", "--json"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        payload = json.loads(proc.stdout)
+        self.assertTrue(payload["verification"]["ok"], payload)
+        self.assertGreaterEqual(payload["verification"]["checks_passed"], 19)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,7 @@
+invoice_id,vendor,department,monthly_usd,q3_total_usd,vp_approved,preapproved_exception
+INV-301,CloudMetrics Pro,Engineering,4200,12600,yes,no
+INV-302,VectorStore Cloud,Engineering,6500,19500,no,no
+INV-303,DesignFlow Enterprise,Product,2800,8400,yes,no
+INV-304,AdPulse Analytics,Marketing,3500,10500,no,no
+INV-305,DataVault Backup,Infrastructure,5000,15000,no,yes
+INV-306,QuickNote AI,Operations,900,2700,no,no

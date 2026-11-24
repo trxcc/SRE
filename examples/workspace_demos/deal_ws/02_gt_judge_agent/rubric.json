@@ -1,0 +1,16 @@
+{
+  "grounded_rubric": [
+    "Reports exact total Q3 spend ($68,700) and exact department totals (Engineering $32,100, Infrastructure $15,000, Marketing $10,500, Product $8,400, Operations $2,700).",
+    "Identifies INV-302 and INV-304 as the only policy violations.",
+    "Explicitly exempts INV-305 under the Annual Continuity Waiver (`preapproved_exception=yes`).",
+    "Computes net non-compliant spend as exactly $30,000.",
+    "Provides actionable owner-specific remediation steps naming invoice IDs and departments for every true violation without flagging compliant vendors."
+  ],
+  "rubric_types": [
+    "Results Assessment",
+    "Results Assessment",
+    "Results Assessment",
+    "Results Assessment",
+    "Results Assessment"
+  ]
+}

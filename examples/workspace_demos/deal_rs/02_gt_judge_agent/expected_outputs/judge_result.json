@@ -1,0 +1,11 @@
+{
+  "scores": {
+    "criterion_1": 1.0,
+    "criterion_2": 1.0,
+    "criterion_3": 1.0,
+    "criterion_4": 1.0,
+    "criterion_5": 0.0
+  },
+  "weighted_score": 0.8,
+  "notes": "eval_kv_prune.py:L7 defines warmup_steps=16, contradicting the candidate's match claim (64)."
+}

@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "passed": true,
+  "artifacts": [
+    {
+      "path": "Desktop/q3_spend_audit.md",
+      "format": "md",
+      "valid": true,
+      "bytes": 856,
+      "sha256": "36c665adc2484177a3b1bf90dae5a43f62f12c45d632ce4f21dc1fe4ce741d39",
+      "reason": "format_readable"
+    }
+  ],
+  "scope": "required file existence/readable format and Python syntax only; no execution, content-length or style thresholds",
+  "self_score_gate_version": 1,
+  "trusted_contract": "demo_output_contract.json",
+  "semantic_content_verified": false
+}

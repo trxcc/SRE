@@ -67,6 +67,8 @@ In deployment-time self-evolution, an assistant executes one live attempt per ar
 ├── scripts/
 │   ├── install.sh                          # Linux CUDA 12.9 / Python 3.12 dependency installer
 │   ├── doctor.py                           # Import & 8-GPU diagnostic checker
+│   ├── verify_env.py                       # End-to-end CPU/GPU/endpoint environment verifier
+│   ├── build_workspace_demos.py            # Materialize & contract-verify 4-role workspace demos
 │   ├── prepare_data.py                     # Materialize HF datasets DEAL-RS & DEAL-WS
 │   ├── configure_run.py                    # Isolated per-attempt config & manifest generator
 │   ├── launch.sh / run.py                  # Single-host 4+4 launcher (--check for CPU preflight)
@@ -74,6 +76,8 @@ In deployment-time self-evolution, an assistant executes one live attempt per ar
 │   ├── serve_frozen_model.sh               # Helper to serve frozen pi_theta_0 via SGLang
 │   ├── eval_deal_rs.py                     # Standalone DEAL-RS 200-task evaluator
 │   └── eval_deal_ws.py                     # Standalone DEAL-WS 200-task evaluator (hardgate)
+├── examples/
+│   └── workspace_demos/                    # Synthetic DEAL-WS & DEAL-RS 4-agent workspace demos
 ├── vendor/
 │   ├── prorl/                              # Nanobot RL harness, Polar 4-engine gateway, hardgate
 │   ├── reward/                             # SRE self-reward service (1 GT anchor + 7 SR)
@@ -93,7 +97,23 @@ See [INSTALL.md](INSTALL.md) for full details (Linux x86_64, Python 3.12, CUDA 1
 
 ```bash
 bash scripts/install.sh
+python3 scripts/verify_env.py --mode cpu   # Safe on CPU-only hosts / CI
+python3 scripts/verify_env.py --mode all   # Full check on 8-GPU training host
 python3 scripts/doctor.py --imports
+```
+
+---
+
+## Workspace Demos (All 4 Agent Roles)
+
+To inspect the exact directory layout, prompts, schemas, hardgate outputs, and information-isolation boundaries of all four agents (**Exec Agent**, **GT Judge Agent**, **Self-Rubric Agent**, and **Self-Scoring Agent**) for both **DEAL-WS** and **DEAL-RS**, see [`examples/workspace_demos/README.md`](examples/workspace_demos/README.md):
+
+```bash
+# Verify all 19 demo contracts (WS scaffold installer, isolation guards, rubric & score schemas, hardgate)
+python3 scripts/build_workspace_demos.py --verify
+
+# Or regenerate into a custom directory and verify
+python3 scripts/build_workspace_demos.py --materialize --verify --output /tmp/sre-demos
 ```
 
 ---

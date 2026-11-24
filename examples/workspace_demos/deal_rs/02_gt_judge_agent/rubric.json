@@ -1,0 +1,35 @@
+{
+  "aggregation": "weighted_mean",
+  "items": [
+    {
+      "id": "gt_1",
+      "weight": 1.0,
+      "score_type": "binary",
+      "pass_condition": "results/audit/kv_prune_audit.csv has exact header and all 5 required aspects."
+    },
+    {
+      "id": "gt_2",
+      "weight": 1.0,
+      "score_type": "binary",
+      "pass_condition": "sink_tokens=4 and retain_ratio=0.25 are marked as match with valid code evidence."
+    },
+    {
+      "id": "gt_3",
+      "weight": 1.0,
+      "score_type": "binary",
+      "pass_condition": "eviction_policy is marked mismatch (heavy_hitter_l1 vs recency_fifo) citing L5/prune_cache."
+    },
+    {
+      "id": "gt_4",
+      "weight": 1.0,
+      "score_type": "binary",
+      "pass_condition": "score_metric is marked mismatch (token_f1 vs exact_match) citing L8/compute_score."
+    },
+    {
+      "id": "gt_5",
+      "weight": 1.0,
+      "score_type": "binary",
+      "pass_condition": "warmup_steps is marked mismatch (64 vs 16) citing L7/L13 in both CSV and summary.md."
+    }
+  ]
+}

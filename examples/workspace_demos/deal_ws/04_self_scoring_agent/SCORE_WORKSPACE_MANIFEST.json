@@ -1,0 +1,28 @@
+{
+  "dataset": "wsclaw",
+  "result_path": "judge_result.json",
+  "score_contract": "wsclaw_native_judge_v2",
+  "artifact_validity_gate": {
+    "version": 2,
+    "passed": true,
+    "artifacts": [
+      {
+        "path": "Desktop/q3_spend_audit.md",
+        "format": "md",
+        "valid": true,
+        "bytes": 1452,
+        "sha256": "1ba67df2f042cdcc1929e858febe7ecb2aa75274eb04e2a0a86c84dbe1983fde",
+        "reason": "format_readable"
+      }
+    ],
+    "scope": "required file existence/readable format and Python syntax only; no execution, content-length or style thresholds",
+    "self_score_gate_version": 1,
+    "trusted_contract": "demo_output_contract.json",
+    "semantic_content_verified": false
+  },
+  "anchor_present": false,
+  "feedback_present": false,
+  "ground_truth_assets_present": false,
+  "instructions_file": "AGENTS.md",
+  "workspace_materialization": "native_gt_link_clean_tree_v1"
+}

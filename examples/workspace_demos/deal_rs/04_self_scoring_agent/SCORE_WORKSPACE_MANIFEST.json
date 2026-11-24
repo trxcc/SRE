@@ -1,0 +1,12 @@
+{
+  "dataset": "researchclaw",
+  "score_mode": "hybrid_agentic",
+  "anchor_present": false,
+  "feedback_present": false,
+  "ground_truth_assets_present": false,
+  "source_layer": "input_files/",
+  "candidate_files": [
+    "results/audit/kv_prune_audit.csv",
+    "results/audit/summary.md"
+  ]
+}

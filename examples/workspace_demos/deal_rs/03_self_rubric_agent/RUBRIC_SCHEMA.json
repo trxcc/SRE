@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Self reward rubric v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "criteria", "limitations"],
+  "properties": {
+    "schema_version": {"const": "self_reward_rubric_v3"},
+    "criteria": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "criterion", "expected", "target_paths", "reason", "weight"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^c[1-9][0-9]*$"},
+          "criterion": {"type": "string", "minLength": 20, "maxLength": 700},
+          "expected": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 700,
+            "description": "Exact fact, value, formula, condition, or explicit accepted set that makes the criterion objectively decidable."
+          },
+          "target_paths": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 500},
+            "description": "Workspace files or directories the scorer should inspect for this criterion."
+          },
+          "reason": {"type": "string", "minLength": 12, "maxLength": 500},
+          "weight": {"const": 1.0}
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {"type": "string", "minLength": 3, "maxLength": 500}
+    }
+  }
+}

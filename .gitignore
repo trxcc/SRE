@@ -6,13 +6,13 @@ __pycache__/
 .DS_Store
 
 # Local data, runs, checkpoints, and secrets
-data/
-runs/
-eval-runs/
-secrets/
-configs/*.local.env
-configs/local.env
+/data/
+/runs/
+/eval-runs/
+/secrets/
+/configs/*.local.env
+/configs/local.env
 
 # Runtime generated symlinks/caches
-runtime/support/
+/runtime/support/
 *.log

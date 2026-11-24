@@ -1,0 +1,12 @@
+{
+  "rubric_scores": {
+    "1": 1.0,
+    "2": 1.0,
+    "3": 0.0,
+    "4": 0.0,
+    "5": 0.5
+  },
+  "score": 0.5,
+  "user_feedback": "Your total spend and department breakdown match the CSV, and you correctly flagged INV-302 and INV-304. However, you misclassified INV-305 (DataVault Backup) as a violation even though it is marked preapproved_exception=yes under the Annual Continuity Waiver in budget_policy.md, which inflated the net non-compliant total from $30,000 to $45,000 and added an unnecessary remediation item for Infrastructure.",
+  "feedback": "Your total spend and department breakdown match the CSV, and you correctly flagged INV-302 and INV-304. However, you misclassified INV-305 (DataVault Backup) as a violation even though it is marked preapproved_exception=yes under the Annual Continuity Waiver in budget_policy.md, which inflated the net non-compliant total from $30,000 to $45,000 and added an unnecessary remediation item for Infrastructure."
+}

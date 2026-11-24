@@ -1,0 +1,13 @@
+{
+  "schema_version": "self_reward_score_v1",
+  "slot_id": "candidate_02",
+  "criterion_scores": {
+    "c1": 1.0,
+    "c2": 1.0,
+    "c3": 1.0,
+    "c4": 1.0,
+    "c5": 1.0
+  },
+  "weighted_score": 1.0,
+  "notes": "All 5 criteria verified directly against input_files/repo_snapshot/eval_kv_prune.py and input_files/paper_lib/kv_prune_2026/paper_sections_text/04_experiments.txt, including warmup_steps mismatch (paper 64 vs code 16 at L7/L13)."
+}

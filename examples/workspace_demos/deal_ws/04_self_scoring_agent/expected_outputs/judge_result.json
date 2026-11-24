@@ -1,0 +1,11 @@
+{
+  "rubric_scores": {
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0,
+    "4": 1.0,
+    "5": 1.0
+  },
+  "feedback": "Desktop/q3_spend_audit.md accurately reports $68,700 total spend and all five department subtotals, flags only INV-302 and INV-304, explicitly exempts INV-305 under the Annual Continuity Waiver, computes the exact $30,000 net non-compliant total, and gives clear owner-specific remediation steps.",
+  "user_feedback": "Everything matches the Q3 spend CSV and budget policy, including the Annual Continuity Waiver exemption for INV-305 and the $30,000 net non-compliant total."
+}

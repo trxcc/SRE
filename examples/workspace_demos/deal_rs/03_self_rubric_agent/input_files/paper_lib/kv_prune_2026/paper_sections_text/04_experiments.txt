@@ -1,0 +1,8 @@
+Section 4: Experimental Setup (KV-Prune 2026)
+
+To evaluate long-context decoding under a fixed memory budget, we keep the first 4 attention
+sink tokens (`sink_tokens=4`) pinned throughout generation. Once the cache exceeds the budget,
+we apply Heavy-Hitter L1 eviction (`eviction_policy="heavy_hitter_l1"`) using cumulative
+attention weights averaged over all heads, retaining 25% of non-sink tokens (`retain_ratio=0.25`).
+Eviction starts only after 64 prefill/decode warmup steps (`warmup_steps=64`). All long-context
+benchmarks are scored with normalized F1 (`score_metric="token_f1"`).

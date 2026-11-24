@@ -1,0 +1,12 @@
+{
+  "pass1_resolved": {
+    "gt_1": 1.0,
+    "gt_2": 1.0,
+    "gt_3": 1.0,
+    "gt_4": 1.0
+  },
+  "pass2_flagged": [
+    "gt_5"
+  ],
+  "reason": "Candidate claims warmup_steps=64 in code; verify eval_kv_prune.py L7."
+}

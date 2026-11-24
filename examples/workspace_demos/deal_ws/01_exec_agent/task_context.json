@@ -1,0 +1,11 @@
+{
+  "task_id": "ws_demo_q3_budget_audit",
+  "persona": "yunying",
+  "required_source_files": [
+    "Desktop/q3_software_spend.csv",
+    "Documents/budget_policy.md"
+  ],
+  "required_output_paths": [
+    "Desktop/q3_spend_audit.md"
+  ]
+}

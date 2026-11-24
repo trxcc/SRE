@@ -16,8 +16,19 @@ Run inside a dedicated Linux container or Python 3.12 virtual environment:
 
 ```bash
 bash scripts/install.sh
+python3 scripts/verify_env.py --mode all
 python3 scripts/doctor.py --imports
 python3 scripts/doctor.py --gpu
+```
+
+You can also run `scripts/verify_env.py` in targeted modes:
+
+```bash
+# CPU-only check: required templates/files, WS scaffold installer, all 4 profile contracts
+python3 scripts/verify_env.py --mode cpu
+
+# Live check including a specific .local.env config and OpenAI-compatible judge/self-reward endpoints
+python3 scripts/verify_env.py --mode all --config configs/deal-ws.local.env --probe-endpoints
 ```
 
 If building FlashAttention / TransformerEngine on a host with limited CPU RAM, lower parallelism with:

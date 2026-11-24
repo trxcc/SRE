@@ -1,0 +1,67 @@
+{
+  "schema_version": "self_reward_rubric_v3",
+  "criteria": [
+    {
+      "id": "c1",
+      "criterion": "results/audit/kv_prune_audit.csv exists with exact header aspect,paper_claim,code_behavior,status,evidence_location and includes all five required aspects.",
+      "expected": "CSV contains header `aspect,paper_claim,code_behavior,status,evidence_location` and rows for `sink_tokens`, `eviction_policy`, `retain_ratio`, `score_metric`, and `warmup_steps`.",
+      "target_paths": [
+        "results/audit/kv_prune_audit.csv"
+      ],
+      "reason": "Explicit schema and row coverage requirement in the task prompt.",
+      "weight": 1.0
+    },
+    {
+      "id": "c2",
+      "criterion": "Both results/audit/kv_prune_audit.csv and results/audit/summary.md correctly classify sink_tokens (4 vs 4) and retain_ratio (0.25 vs 0.25) as matches grounded in eval_kv_prune.py.",
+      "expected": "sink_tokens=4 (match, L4) and retain_ratio=0.25 (match, L6) verified against input_files/paper_lib/kv_prune_2026/paper_sections_text/04_experiments.txt and input_files/repo_snapshot/eval_kv_prune.py.",
+      "target_paths": [
+        "results/audit/kv_prune_audit.csv",
+        "results/audit/summary.md",
+        "input_files/repo_snapshot/eval_kv_prune.py"
+      ],
+      "reason": "Verifies true positive match detection without false discrepancies.",
+      "weight": 1.0
+    },
+    {
+      "id": "c3",
+      "criterion": "Both deliverables identify eviction_policy as a mismatch between paper heavy_hitter_l1 and code recency_fifo with exact line references.",
+      "expected": "paper_claim=`heavy_hitter_l1`, code_behavior=`recency_fifo`, status=`mismatch`, citing eval_kv_prune.py L5 (and optionally prune_cache L16-L18).",
+      "target_paths": [
+        "results/audit/kv_prune_audit.csv",
+        "results/audit/summary.md",
+        "input_files/repo_snapshot/eval_kv_prune.py"
+      ],
+      "reason": "Major algorithmic discrepancy directly visible in DEFAULT_CONFIG and prune_cache.",
+      "weight": 1.0
+    },
+    {
+      "id": "c4",
+      "criterion": "Both deliverables identify score_metric as a mismatch between paper token_f1 and code exact_match with exact line references.",
+      "expected": "paper_claim=`token_f1`, code_behavior=`exact_match`, status=`mismatch`, citing eval_kv_prune.py L8 (and optionally compute_score L21-L23).",
+      "target_paths": [
+        "results/audit/kv_prune_audit.csv",
+        "results/audit/summary.md",
+        "input_files/repo_snapshot/eval_kv_prune.py"
+      ],
+      "reason": "Evaluation metric mismatch directly visible in DEFAULT_CONFIG and compute_score.",
+      "weight": 1.0
+    },
+    {
+      "id": "c5",
+      "criterion": "Both deliverables identify warmup_steps as a mismatch between paper 64 and code 16 with exact line references.",
+      "expected": "paper_claim=`64`, code_behavior=`16`, status=`mismatch`, citing eval_kv_prune.py L7 (and optionally L13).",
+      "target_paths": [
+        "results/audit/kv_prune_audit.csv",
+        "results/audit/summary.md",
+        "input_files/paper_lib/kv_prune_2026/paper_sections_text/04_experiments.txt",
+        "input_files/repo_snapshot/eval_kv_prune.py"
+      ],
+      "reason": "Directly verifiable in eval_kv_prune.py L7 and specifically missed by the anchor rollout.",
+      "weight": 1.0
+    }
+  ],
+  "limitations": [
+    "Audits static paper claims against the released script without executing benchmark datasets."
+  ]
+}

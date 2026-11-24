@@ -1,0 +1,6 @@
+aspect,paper_claim,code_behavior,status,evidence_location
+sink_tokens,4,4,match,eval_kv_prune.py:L4
+eviction_policy,heavy_hitter_l1,recency_fifo,mismatch,eval_kv_prune.py:L5
+retain_ratio,0.25,0.25,match,eval_kv_prune.py:L6
+score_metric,token_f1,exact_match,mismatch,eval_kv_prune.py:L8
+warmup_steps,64,64,match,eval_kv_prune.py:L7

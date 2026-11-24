@@ -1,0 +1,13 @@
+{
+  "schema_version": "self_reward_score_v1",
+  "slot_id": "candidate_02",
+  "criterion_scores": {
+    "c1": 1.0,
+    "c2": 1.0,
+    "c3": 1.0,
+    "c4": 1.0,
+    "c5": 1.0
+  },
+  "weighted_score": 1.0,
+  "notes": "Desktop/q3_spend_audit.md accurately reports $68,700 total spend and all five department subtotals, flags only INV-302 and INV-304, explicitly exempts INV-305 under the Annual Continuity Waiver, computes the exact $30,000 net non-compliant total, and gives clear owner-specific remediation steps."
+}

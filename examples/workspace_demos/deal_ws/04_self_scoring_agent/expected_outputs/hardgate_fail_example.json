@@ -1,0 +1,59 @@
+{
+  "status": {
+    "session_id": "demo-hardgate-fail",
+    "score_contract": "wsclaw_native_judge_v2",
+    "status": "accepted",
+    "error": null,
+    "attempts": 0,
+    "reason": "required_artifact_invalid",
+    "judge_executed": false,
+    "artifact_validity_gate": {
+      "version": 2,
+      "passed": false,
+      "artifacts": [
+        {
+          "path": "Desktop/q3_spend_audit.md",
+          "format": "md",
+          "valid": false,
+          "reason": "required_file_missing"
+        }
+      ],
+      "scope": "required file existence/readable format and Python syntax only; no execution, content-length or style thresholds",
+      "self_score_gate_version": 1,
+      "trusted_contract": "demo_output_contract.json",
+      "semantic_content_verified": false
+    }
+  },
+  "value": {
+    "schema_version": "self_reward_score_v1",
+    "slot_id": "candidate_missing_deliverable",
+    "criterion_scores": {
+      "c1": 0.0,
+      "c2": 0.0,
+      "c3": 0.0,
+      "c4": 0.0,
+      "c5": 0.0
+    },
+    "weighted_score": 0.0,
+    "notes": "Required artifact failed deterministic validity gate.",
+    "score_contract": "wsclaw_native_judge_v2",
+    "artifact_validity_gate": {
+      "version": 2,
+      "passed": false,
+      "artifacts": [
+        {
+          "path": "Desktop/q3_spend_audit.md",
+          "format": "md",
+          "valid": false,
+          "reason": "required_file_missing"
+        }
+      ],
+      "scope": "required file existence/readable format and Python syntax only; no execution, content-length or style thresholds",
+      "self_score_gate_version": 1,
+      "trusted_contract": "demo_output_contract.json",
+      "semantic_content_verified": false
+    },
+    "deterministic_policy_failure": true,
+    "judge_executed": false
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "rubric_workspace_v2",
+  "dataset": "wsclaw",
+  "rubric_contract": "wsclaw_full_workspace_v1",
+  "allowed_output": "rubric.json",
+  "forbidden_inputs": [
+    "ground-truth rubric",
+    "reference answer",
+    "judge workspace",
+    "reward code"
+  ],
+  "anchor_evidence": {
+    "task_source_files": [
+      "input/Desktop/q3_software_spend.csv",
+      "input/Documents/budget_policy.md"
+    ],
+    "candidate_files": [
+      "Desktop/q3_spend_audit.md"
+    ],
+    "missing_candidate_files": []
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "slot_id": "candidate_02",
+  "repeat_count": 3,
+  "repeat_scores": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "mean_score": 1.0,
+  "aggregation": "mean"
+}

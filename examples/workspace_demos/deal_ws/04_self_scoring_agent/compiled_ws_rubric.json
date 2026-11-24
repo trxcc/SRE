@@ -1,0 +1,48 @@
+{
+  "grounded_rubric": [
+    "Desktop/q3_spend_audit.md reports the exact total Q3 software spend and per-department spend totals matching input/Desktop/q3_software_spend.csv. Expected: Total Q3 spend = $68,700; Engineering = $32,100, Infrastructure = $15,000, Marketing = $10,500, Product = $8,400, Operations = $2,700. Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv",
+    "Desktop/q3_spend_audit.md flags INV-302 ($19,500) and INV-304 ($10,500) as non-compliant vendors exceeding $10,000 without VP sign-off. Expected: Both INV-302 (VectorStore Cloud, Engineering) and INV-304 (AdPulse Analytics, Marketing) are listed as policy violations. Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv, input/Documents/budget_policy.md",
+    "Desktop/q3_spend_audit.md applies the Annual Continuity Waiver exception so INV-305 (DataVault Backup) is not classified as a policy violation. Expected: INV-305 ($15,000, preapproved_exception=yes) is excluded from violations and not mixed with non-compliant items; INV-301, INV-303, INV-306 are also compliant. Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv, input/Documents/budget_policy.md",
+    "Desktop/q3_spend_audit.md reports the exact net non-compliant dollar total after excluding pre-approved exceptions. Expected: Net non-compliant total equals $30,000 ($19,500 + $10,500). Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv",
+    "Desktop/q3_spend_audit.md provides concise remediation actions per owner naming the invoice ID, department, and retroactive approval or downgrade action for each true violation. Expected: Actionable remediation items for Engineering (INV-302) and Marketing (INV-304), without demanding remediation for exempt INV-305. Inspect: Desktop/q3_spend_audit.md, input/Documents/budget_policy.md"
+  ],
+  "rubric_types": [
+    "Results Assessment",
+    "Results Assessment",
+    "Results Assessment",
+    "Results Assessment",
+    "Results Assessment"
+  ],
+  "rules": [
+    {
+      "id": "rubric_01",
+      "description": "Desktop/q3_spend_audit.md reports the exact total Q3 software spend and per-department spend totals matching input/Desktop/q3_software_spend.csv. Expected: Total Q3 spend = $68,700; Engineering = $32,100, Infrastructure = $15,000, Marketing = $10,500, Product = $8,400, Operations = $2,700. Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv. Reason: Direct arithmetic requirement from the user prompt verifiable from the source CSV.",
+      "type": "Results Assessment",
+      "weight": 1.0
+    },
+    {
+      "id": "rubric_02",
+      "description": "Desktop/q3_spend_audit.md flags INV-302 ($19,500) and INV-304 ($10,500) as non-compliant vendors exceeding $10,000 without VP sign-off. Expected: Both INV-302 (VectorStore Cloud, Engineering) and INV-304 (AdPulse Analytics, Marketing) are listed as policy violations. Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv, input/Documents/budget_policy.md. Reason: Core threshold rule in budget_policy.md rule 1.",
+      "type": "Results Assessment",
+      "weight": 1.0
+    },
+    {
+      "id": "rubric_03",
+      "description": "Desktop/q3_spend_audit.md applies the Annual Continuity Waiver exception so INV-305 (DataVault Backup) is not classified as a policy violation. Expected: INV-305 ($15,000, preapproved_exception=yes) is excluded from violations and not mixed with non-compliant items; INV-301, INV-303, INV-306 are also compliant. Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv, input/Documents/budget_policy.md. Reason: Policy rule 2 explicitly exempts preapproved_exception=yes; anchor feedback highlighted this exact failure mode.",
+      "type": "Results Assessment",
+      "weight": 1.0
+    },
+    {
+      "id": "rubric_04",
+      "description": "Desktop/q3_spend_audit.md reports the exact net non-compliant dollar total after excluding pre-approved exceptions. Expected: Net non-compliant total equals $30,000 ($19,500 + $10,500). Inspect: Desktop/q3_spend_audit.md, input/Desktop/q3_software_spend.csv. Reason: Explicit prompt deliverable #3 derived from true violations only.",
+      "type": "Results Assessment",
+      "weight": 1.0
+    },
+    {
+      "id": "rubric_05",
+      "description": "Desktop/q3_spend_audit.md provides concise remediation actions per owner naming the invoice ID, department, and retroactive approval or downgrade action for each true violation. Expected: Actionable remediation items for Engineering (INV-302) and Marketing (INV-304), without demanding remediation for exempt INV-305. Inspect: Desktop/q3_spend_audit.md, input/Documents/budget_policy.md. Reason: Explicit prompt deliverable #4 and policy rule 4.",
+      "type": "Results Assessment",
+      "weight": 1.0
+    }
+  ]
+}
