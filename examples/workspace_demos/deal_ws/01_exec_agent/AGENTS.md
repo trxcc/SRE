@@ -37,3 +37,31 @@ available evidence and creating the requested artifact, not by merely describing
 - Do not invent facts that should come from source files. Make uncertainty explicit when the
   available evidence is incomplete.
 - Keep the final response to one short completion status after all artifacts exist.
+
+## Current Task Contract
+
+These paths are authoritative for the current task.
+Inspect every required source before creating the deliverable; do not invent source facts.
+The read-only source desktop is `input/Desktop/`; never write there.
+When the user says desktop, use the writable workspace-relative `Desktop/` directory.
+
+### Required Source Files
+
+- `input/Desktop/q3_software_spend.csv`
+- `input/Documents/budget_policy.md`
+
+### Required Output Paths
+
+- `Desktop/q3_spend_audit.md`
+
+### Source Inspection
+
+Before creating output, inspect every required source and use extracted facts. Choose the inspection method and character budget according to the file and evidence needed. The native tool accepts an optional `max_chars`; for focused searches you may instead run `python tools/inspect_workspace_file.py ...` through `exec` and pipe its extracted output to `grep` or `rg`. If a bounded preview is truncated and omits needed evidence, increase the budget or inspect the relevant remainder with a local format-specific tool.
+
+Inspect the required source paths listed above using the provided inspect_workspace_file tool through the tool-calling interface. Supply the source path in its path argument and wait for the actual tool result. Writing a tool name or a Python-style function call in ordinary response text does not execute a tool.
+
+Do not finish until every required output exists at the exact path above.
+
+### Tool Call Discipline
+
+Prefer keeping each tool call reasonably compact and syntactically complete. For substantial code, consider writing a script to a workspace file (in a few manageable writes when useful) and then executing that file instead of embedding the whole script in a large `python -c` command. This usually reduces shell quoting and JSON-escaping failures. Focused inspection and bounded output are also generally more reliable than printing whole files or datasets.

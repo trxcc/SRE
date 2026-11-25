@@ -293,7 +293,18 @@ class DealReleaseTests(unittest.TestCase):
         )
         payload = json.loads(proc.stdout)
         self.assertTrue(payload["verification"]["ok"], payload)
-        self.assertGreaterEqual(payload["verification"]["checks_passed"], 20)
+        self.assertGreaterEqual(payload["verification"]["checks_passed"], 21)
+
+    def test_nanobot_system_templates_match_ws_eval_contract(self):
+        identity = (ROOT / "vendor/nanobot/nanobot/templates/agent/identity.md").read_text(encoding="utf-8")
+        tool_contract = (ROOT / "vendor/nanobot/nanobot/templates/agent/tool_contract.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "For a requested file deliverable, save it in the workspace and report its path in your final answer.",
+            identity,
+        )
+        self.assertNotIn("call 'message'", identity)
+        self.assertNotIn("## Messaging and Media", tool_contract)
+        self.assertIn("register `HEARTBEAT.md` as a cron job", tool_contract)
 
     def test_nanobot_microcompact_env_toggle(self):
         runner_path = ROOT / "vendor/nanobot/nanobot/agent/runner.py"

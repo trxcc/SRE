@@ -1,6 +1,7 @@
 # Tool Usage Notes
 
-Tool signatures are provided automatically via function calling. This section documents the general tool contract and non-obvious usage patterns.
+Tool signatures are provided automatically via function calling. This section
+documents the general tool contract and non-obvious usage patterns.
 
 ## General Tool Contract
 
@@ -53,14 +54,8 @@ Tool signatures are provided automatically via function calling. This section do
 - Use `web_search` to find sources and `web_fetch` for a specific page or result that needs closer reading.
 - Do not invent freshness-sensitive facts when tools can verify them.
 
-## Messaging and Media
-
-- Use `message` to send content or local media to the user/channel.
-- `read_file` only reads content for your analysis; it does not deliver a file to the user.
-- When sending an existing local file, attach it through the message/media mechanism instead of pasting file contents unless the user asked for text.
-
 ## Scheduling and Background Work
 
 - Use `cron` for scheduled reminders or recurring jobs; do not run `nanobot cron` through `exec`.
-- For heartbeat tasks, update `HEARTBEAT.md`; the default gateway heartbeat cron job handles periodic checks when enabled.
+- For heartbeat tasks, register `HEARTBEAT.md` as a cron job according to the agent instructions.
 - Do not write reminders only to memory files when the user expects an actual notification.

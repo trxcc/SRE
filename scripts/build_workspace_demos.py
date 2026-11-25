@@ -478,7 +478,10 @@ def materialize_deal_ws(root: Path) -> None:
     judge_sys = WS_JUDGE_PROMPT.read_text(encoding="utf-8")
     required_contract = [{"path": "Desktop/q3_spend_audit.md", "must_create": True}]
 
-    # 1. 01_exec_agent (Nanobot solver workspace)
+    # 1. 01_exec_agent (Nanobot solver workspace, materialized with native WSClaw hooks)
+    from clawgym_nanobot.gemma_tool_prompt import prepare_gemma_tool_prompt
+    from scripts.clawgym_nanobot import wsclaw_eval_only
+
     exec_dir = base / "01_exec_agent"
     exec_dir.mkdir(parents=True, exist_ok=True)
     for name in ("AGENTS.md", "SOUL.md", "USER.md", "TOOLS.md", "HEARTBEAT.md"):
@@ -487,9 +490,26 @@ def materialize_deal_ws(root: Path) -> None:
     shutil.copy2(WS_TEMPLATES / "memory" / "MEMORY.md", exec_dir / "memory" / "MEMORY.md")
     # Save template .gitignore as .example so git tracks all demo files cleanly
     shutil.copy2(WS_TEMPLATES / ".gitignore", exec_dir / "workspace_gitignore.example")
-    write_text(exec_dir / "input" / "Desktop" / "q3_software_spend.csv", WS_INPUT_CSV)
-    write_text(exec_dir / "input" / "Documents" / "budget_policy.md", WS_INPUT_POLICY)
+    src_csv = exec_dir / "input" / "Desktop" / "q3_software_spend.csv"
+    src_policy = exec_dir / "input" / "Documents" / "budget_policy.md"
+    write_text(src_csv, WS_INPUT_CSV)
+    write_text(src_policy, WS_INPUT_POLICY)
     write_text(exec_dir / "Desktop" / "q3_spend_audit.md", WS_ANCHOR_REPORT)
+    # Apply the exact runtime WSClaw USER.md & AGENTS.md task-contract writers
+    wsclaw_eval_only.write_user_context(
+        exec_dir,
+        {"scenario_persona": "Finance & Operations Manager"},
+        {"persona": "yunying"},
+    )
+    wsclaw_eval_only.append_task_contract(
+        exec_dir,
+        sources=[
+            (Path("Desktop/q3_software_spend.csv"), src_csv),
+            (Path("Documents/budget_policy.md"), src_policy),
+        ],
+        outputs=[Path("Desktop/q3_spend_audit.md")],
+    )
+    prepare_gemma_tool_prompt(exec_dir)
     write_json(
         exec_dir / "task_context.json",
         {
@@ -877,6 +897,18 @@ def verify_demos(root: Path) -> dict[str, Any]:
     # 2. Verify workspace prompt/schema parity with repository sources
     ws_base = root / "deal_ws"
     rs_base = root / "deal_rs"
+    ws_exec_agents = (ws_base / "01_exec_agent" / "AGENTS.md").read_text(encoding="utf-8")
+    ws_exec_user = (ws_base / "01_exec_agent" / "USER.md").read_text(encoding="utf-8")
+    check(
+        "ws_exec_task_contract_present",
+        "## Current Task Contract" in ws_exec_agents
+        and "### Required Source Files" in ws_exec_agents
+        and "### Required Output Paths" in ws_exec_agents
+        and "### Tool Call Discipline" in ws_exec_agents
+        and "Writing a tool name or a Python-style function call" in ws_exec_agents
+        and "Business and content operations" in ws_exec_user,
+        "deal_ws/01_exec_agent AGENTS.md & USER.md match runtime append_task_contract + gemma_tool_prompt + write_user_context",
+    )
     rs_missing_tpl = [
         rel
         for rel in ("AGENTS.md", "SOUL.md", "USER.md", "HEARTBEAT.md", "memory/MEMORY.md")
