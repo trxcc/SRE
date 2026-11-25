@@ -456,6 +456,16 @@ class ReadFileTool(_FsTool):
 # ---------------------------------------------------------------------------
 
 
+_NON_TEXT_WRITE_EXTENSIONS = frozenset({
+    ".docx", ".doc", ".xlsx", ".xlsm", ".xltx", ".xltm", ".xls",
+    ".pptx", ".ppt", ".pdf",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp", ".ico", ".heic",
+    ".wav", ".mp3", ".mp4", ".mov", ".avi", ".mkv", ".flv", ".webm",
+    ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar",
+    ".db", ".sqlite", ".sqlite3", ".sav", ".xpt",
+})
+
+
 @tool_parameters(
     tool_parameters_schema(
         path=StringSchema("The file path to write to"),
@@ -487,6 +497,13 @@ class WriteFileTool(_FsTool):
             if content is None:
                 raise ValueError("Unknown content")
             fp = self._resolve_write(path)
+            suffix = fp.suffix.lower()
+            if suffix in _NON_TEXT_WRITE_EXTENSIONS:
+                return (
+                    f"Error: write_file only writes UTF-8 text and cannot create a real {suffix} file. "
+                    "Use exec and an appropriate library (for example python-docx, openpyxl, "
+                    "python-pptx, reportlab, or Pillow), then inspect the generated artifact before finishing."
+                )
             fp.parent.mkdir(parents=True, exist_ok=True)
             fp.write_text(content, encoding="utf-8")
             self._file_states.record_write(fp)

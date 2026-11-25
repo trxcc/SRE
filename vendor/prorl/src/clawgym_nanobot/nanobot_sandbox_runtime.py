@@ -490,7 +490,11 @@ def nanobot_shell_script(
             (
                 f"export NANOBOT_RL_EXEC_PATH_PREPEND={shlex.quote(str(fallback_runtime_bin))}"
                 if fallback_parity
-                else ":"
+                else (
+                    f"if [ -d {shlex.quote(str(fallback_runtime_bin))} ]; then "
+                    f"export NANOBOT_RL_EXEC_PATH_PREPEND={shlex.quote(str(fallback_runtime_bin))}; "
+                    f"else export NANOBOT_RL_EXEC_PATH_PREPEND=\"${{NANOBOT_RL_EXEC_PATH_PREPEND:-{str(env_bin)}}}\"; fi"
+                )
             ),
             f"export NANOBOT_CONFIG={shlex.quote(str(config_path))}",
             f"export NANOBOT_WORKSPACE_ACTUAL={shlex.quote(str(workspace_dir))}",

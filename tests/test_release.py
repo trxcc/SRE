@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import ast
+import asyncio
+import importlib.util
 import json
 import os
 import re
@@ -357,6 +359,197 @@ class DealReleaseTests(unittest.TestCase):
                 os.environ.pop("NANOBOT_MICROCOMPACT_ENABLED", None)
             else:
                 os.environ["NANOBOT_MICROCOMPACT_ENABLED"] = old
+
+    def test_write_file_rejects_binary_deliverables(self):
+        fs_path = ROOT / "vendor/nanobot/nanobot/agent/tools/filesystem.py"
+        try:
+            sys.path.insert(0, str(ROOT / "vendor/nanobot"))
+            from nanobot.agent.tools.filesystem import WriteFileTool
+
+            def make_tool(root: Path):
+                return WriteFileTool(workspace=root, allowed_dir=root)
+        except ImportError:
+            source = fs_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(fs_path))
+            ns: dict = {"Any": object, "Path": Path}
+            nodes: list = [
+                ast.ImportFrom(
+                    module="__future__",
+                    names=[ast.alias(name="annotations", asname=None)],
+                    level=0,
+                )
+            ]
+            for node in tree.body:
+                if isinstance(node, ast.Assign) and any(
+                    isinstance(t, ast.Name) and t.id == "_NON_TEXT_WRITE_EXTENSIONS"
+                    for t in node.targets
+                ):
+                    nodes.append(node)
+                elif isinstance(node, ast.ClassDef) and node.name == "WriteFileTool":
+                    for item in node.body:
+                        if isinstance(item, ast.AsyncFunctionDef) and item.name == "execute":
+                            nodes.append(item)
+            mod = ast.fix_missing_locations(ast.Module(body=nodes, type_ignores=[]))
+            exec(compile(mod, str(fs_path), "exec"), ns)
+            execute_fn = ns["execute"]
+
+            class _StubFileStates:
+                def record_write(self, _fp: Path) -> None:
+                    pass
+
+            class _StubWriteTool:
+                def __init__(self, root: Path):
+                    self._root = root
+                    self._file_states = _StubFileStates()
+
+                def _resolve_write(self, rel: str) -> Path:
+                    return self._root / rel
+
+                async def execute(self, path=None, content=None, **kwargs):
+                    return await execute_fn(self, path=path, content=content, **kwargs)
+
+            def make_tool(root: Path):
+                return _StubWriteTool(root)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tool = make_tool(root)
+            for ext in (".docx", ".xlsx", ".pptx", ".pdf"):
+                rel = f"Desktop/deliverable{ext}"
+                result = asyncio.run(tool.execute(path=rel, content="plain text"))
+                expected = (
+                    f"Error: write_file only writes UTF-8 text and cannot create a real {ext} file. "
+                    "Use exec and an appropriate library (for example python-docx, openpyxl, "
+                    "python-pptx, reportlab, or Pillow), then inspect the generated artifact before finishing."
+                )
+                self.assertEqual(result, expected)
+                self.assertFalse((root / rel).exists(), f"binary file should not be created: {rel}")
+
+            ok = asyncio.run(tool.execute(path="notes/report.md", content="# hello\n"))
+            self.assertTrue(ok.startswith("Successfully wrote"), ok)
+            self.assertEqual((root / "notes/report.md").read_text(encoding="utf-8"), "# hello\n")
+
+    def test_ws_user_context_restores_eval_scenario_persona(self):
+        sys.path.insert(0, str(ROOT / "vendor/prorl"))
+        from scripts.clawgym_nanobot import wsclaw_eval_only
+
+        personas = json.loads((ROOT / "configs/deal-ws-eval-personas.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(personas), 39)
+        self.assertEqual(
+            personas["scenario_340_research__unified_chronological_event_plan"],
+            "Operations Manager",
+        )
+
+        # Fallback via task_id when task_output.json lacks scenario_persona
+        ctx = wsclaw_eval_only.user_context(
+            {},
+            {"persona": "research"},
+            task_id="scenario_340_research__unified_chronological_event_plan",
+        )
+        self.assertEqual(ctx["role"], "Operations Manager")
+
+        # Explicit scenario_persona in task_output takes precedence
+        ctx_explicit = wsclaw_eval_only.user_context(
+            {"scenario_persona": "Custom Analyst"},
+            {"persona": "research"},
+            task_id="scenario_340_research__unified_chronological_event_plan",
+        )
+        self.assertEqual(ctx_explicit["role"], "Custom Analyst")
+
+        # Unknown task falls back to Workspace owner
+        ctx_default = wsclaw_eval_only.user_context(
+            {},
+            {"persona": "research"},
+            task_id="scenario_unknown_task",
+        )
+        self.assertEqual(ctx_default["role"], "Workspace owner")
+
+    def test_nanobot_shell_script_prepends_runtime_bin_for_exec_python(self):
+        def _load_mod(name: str, rel: str):
+            path = ROOT / rel
+            spec = importlib.util.spec_from_file_location(name, path)
+            assert spec is not None and spec.loader is not None
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[name] = mod
+            spec.loader.exec_module(mod)
+            return mod
+
+        from clawgym_nanobot import nanobot_sandbox_runtime
+
+        polar_nanobot_runtime = _load_mod(
+            "_test_polar_nanobot_runtime",
+            "vendor/prorl/src/polar/agent/presets/nanobot/runtime.py",
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            ws = tmp_path / "workspace"
+            ws.mkdir()
+            cfg = tmp_path / "config.json"
+            cfg.write_text("{}\n", encoding="utf-8")
+            log_dir = tmp_path / "logs"
+            log_dir.mkdir()
+
+            old_fp = os.environ.get("NANOBOT_WSCLAW_FALLBACK_PARITY")
+            try:
+                os.environ["NANOBOT_WSCLAW_FALLBACK_PARITY"] = "0"
+                for mod in (polar_nanobot_runtime, nanobot_sandbox_runtime):
+                    script = mod.nanobot_shell_script(
+                        workspace_dir=ws,
+                        config_path=cfg,
+                        session_id="test-session",
+                        turn_type="initial",
+                        message="hello",
+                        log_dir=log_dir,
+                    )
+                    runtime_bin = str(ws / ".runtime" / "bin")
+                    self.assertIn(f"[ -d {runtime_bin} ]", script)
+                    self.assertIn(f"export NANOBOT_RL_EXEC_PATH_PREPEND={runtime_bin}", script)
+                    self.assertIn("NANOBOT_RL_EXEC_PATH_PREPEND:-", script)
+                    proc = subprocess.run(["bash", "-n"], input=script, text=True, capture_output=True)
+                    self.assertEqual(proc.returncode, 0, proc.stderr)
+            finally:
+                if old_fp is None:
+                    os.environ.pop("NANOBOT_WSCLAW_FALLBACK_PARITY", None)
+                else:
+                    os.environ["NANOBOT_WSCLAW_FALLBACK_PARITY"] = old_fp
+
+    def test_openai_compat_supports_temperature_with_thinking(self):
+        prov_path = ROOT / "vendor/nanobot/nanobot/providers/openai_compat_provider.py"
+        try:
+            sys.path.insert(0, str(ROOT / "vendor/nanobot"))
+            from nanobot.providers.openai_compat_provider import OpenAICompatProvider
+
+            supports_temp = OpenAICompatProvider._supports_temperature
+        except ImportError:
+            source = prov_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(prov_path))
+            ns: dict = {}
+            nodes: list = [
+                ast.ImportFrom(
+                    module="__future__",
+                    names=[ast.alias(name="annotations", asname=None)],
+                    level=0,
+                )
+            ]
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef) and node.name == "OpenAICompatProvider":
+                    for item in node.body:
+                        if isinstance(item, ast.FunctionDef) and item.name == "_supports_temperature":
+                            item.decorator_list = []
+                            nodes.append(item)
+            mod = ast.fix_missing_locations(ast.Module(body=nodes, type_ignores=[]))
+            exec(compile(mod, str(prov_path), "exec"), ns)
+            supports_temp = ns["_supports_temperature"]
+
+        self.assertTrue(supports_temp("gemma4-e4b-it", "medium"))
+        self.assertTrue(supports_temp("qwen3.5-9b", "high"))
+        self.assertTrue(supports_temp("side__eval-124-0", "medium"))
+        self.assertTrue(supports_temp("vllm/demo1-pro3", "medium"))
+        self.assertFalse(supports_temp("gpt-5", "medium"))
+        self.assertFalse(supports_temp("openai/gpt-5-mini", "low"))
+        self.assertFalse(supports_temp("o3", "high"))
+        self.assertFalse(supports_temp("openai/o4-mini", "medium"))
 
 
 if __name__ == "__main__":

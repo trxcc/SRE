@@ -211,6 +211,12 @@ def _prepare_deal_ws(
             zip_cache[full] = zipfile.ZipFile(full, "r")
         return zip_cache[full]
 
+    eval_personas_path = Path(__file__).resolve().parents[1] / "configs" / "deal-ws-eval-personas.json"
+    eval_personas = (
+        json.loads(eval_personas_path.read_text(encoding="utf-8"))
+        if eval_personas_path.is_file()
+        else {}
+    )
     counts: dict[str, int] = {}
     try:
         for hf_split, out_name in (("train", "train"), ("test", "eval")):
@@ -233,14 +239,19 @@ def _prepare_deal_ws(
                 persona_root = (filesys_root / row["workspace_root"]).resolve()
                 assert persona_root.is_dir(), f"Missing extracted persona workspace: {persona_root}"
 
+                source_task_id = str(row.get("source_task_id") or row["task_id"])
+                scenario_persona = str(
+                    row.get("scenario_persona") or eval_personas.get(source_task_id) or ""
+                ).strip() or None
                 entry = {
-                    "task_id": str(row.get("source_task_id") or row["task_id"]),
+                    "task_id": source_task_id,
                     "user_query": str(row["prompt"]),
                     "input_mount_dir": "/root/.openclaw/workspace",
                     "metadata": {
                         "source": "wsclaw",
                         "hf_task_id": str(row["task_id"]),
                         "persona": str(row["persona"]),
+                        **({"scenario_persona": scenario_persona} if scenario_persona else {}),
                         "required_source_files": list(row["required_source_files"]),
                         "required_output_paths": list(row["required_output_paths"]),
                         "workspace_mode": "full",
@@ -250,6 +261,23 @@ def _prepare_deal_ws(
                 }
                 (task_dir / "data_entry.json").write_text(
                     json.dumps(entry, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                contract_path = reward_dir / "output_contract.json"
+                contract_data = (
+                    json.loads(contract_path.read_text(encoding="utf-8"))
+                    if contract_path.is_file()
+                    else {}
+                )
+                task_output = {
+                    "task_id": source_task_id,
+                    "workspace_persona": str(row["persona"]),
+                    "scenario_persona": scenario_persona,
+                    "task_instruction": str(row["prompt"]),
+                    "output_files": contract_data.get("output_files") or [],
+                }
+                (task_dir / "task_output.json").write_text(
+                    json.dumps(task_output, ensure_ascii=False, indent=2) + "\n",
                     encoding="utf-8",
                 )
             counts[out_name] = len(rows)

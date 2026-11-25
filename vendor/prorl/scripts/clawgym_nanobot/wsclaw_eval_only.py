@@ -218,9 +218,66 @@ def install_workspace_scaffold(workspace: Path) -> None:
     (workspace / "skills").mkdir()
 
 
-def user_context(task_output: dict[str, Any], metadata: dict[str, Any]) -> dict[str, str]:
-    raw_role = task_output.get("scenario_persona")
+_EVAL_PERSONAS_CACHE: dict[str, str] | None = None
+
+
+def _eval_persona_role(task_id: str | None) -> str:
+    global _EVAL_PERSONAS_CACHE
+    if not task_id:
+        return ""
+    if _EVAL_PERSONAS_CACHE is None:
+        loaded: dict[str, str] = {}
+        repo_root = Path(__file__).resolve().parents[4]
+        candidate = repo_root / "configs" / "deal-ws-eval-personas.json"
+        if candidate.is_file():
+            try:
+                raw = json.loads(candidate.read_text(encoding="utf-8"))
+                if isinstance(raw, dict):
+                    loaded = {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}
+            except Exception:
+                loaded = {}
+        _EVAL_PERSONAS_CACHE = loaded
+    return _EVAL_PERSONAS_CACHE.get(str(task_id), "")
+
+
+def _load_task_output(task_dir: Path, entry: dict[str, Any] | None = None) -> dict[str, Any]:
+    path = task_dir / "task_output.json"
+    if path.is_file():
+        data = load_json(path)
+        if isinstance(data, dict):
+            return data
+    fallback: dict[str, Any] = {}
+    contract_path = task_dir / "reward" / "output_contract.json"
+    if contract_path.is_file():
+        contract = load_json(contract_path)
+        if isinstance(contract, dict):
+            fallback.update(contract)
+    if isinstance(entry, dict):
+        fallback.setdefault("task_id", entry.get("task_id"))
+        fallback.setdefault("task_instruction", entry.get("user_query"))
+        meta = entry.get("metadata") or {}
+        if isinstance(meta, dict):
+            fallback.setdefault("workspace_persona", meta.get("persona"))
+            if meta.get("scenario_persona"):
+                fallback.setdefault("scenario_persona", meta.get("scenario_persona"))
+    return fallback
+
+
+def user_context(
+    task_output: dict[str, Any],
+    metadata: dict[str, Any],
+    *,
+    task_id: str | None = None,
+) -> dict[str, str]:
+    raw_role = task_output.get("scenario_persona") or metadata.get("scenario_persona")
     role = raw_role.strip() if isinstance(raw_role, str) else ""
+    if not role or role.lower() == "none":
+        role = _eval_persona_role(
+            task_id
+            or task_output.get("task_id")
+            or metadata.get("source_task_id")
+            or metadata.get("task_id")
+        ).strip()
     if not role or role.lower() == "none":
         role = "Workspace owner"
     persona = str(metadata.get("persona") or task_output.get("workspace_persona") or "").strip()
@@ -232,8 +289,10 @@ def write_user_context(
     workspace: Path,
     task_output: dict[str, Any],
     metadata: dict[str, Any],
+    *,
+    task_id: str | None = None,
 ) -> dict[str, str]:
-    context = user_context(task_output, metadata)
+    context = user_context(task_output, metadata, task_id=task_id)
     text = f"""# User Context
 
 The user is commissioning work in the following professional context.
@@ -583,8 +642,8 @@ def prepare_workspace(
     outputs = output_paths(task_dir)
     append_task_contract(workspace, sources, outputs)
     metadata = entry.get("metadata") or {}
-    task_output = load_json(task_dir / "task_output.json")
-    profile = write_user_context(workspace, task_output, metadata)
+    task_output = _load_task_output(task_dir, entry)
+    profile = write_user_context(workspace, task_output, metadata, task_id=entry.get("task_id"))
     write_json(
         workspace / "task_context.json",
         {
@@ -1051,7 +1110,7 @@ def prepare_judge_workspace(
         if exists and not destination.exists():
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.symlink_to(source.resolve())
-    task_output = load_json(task_dir / "task_output.json")
+    task_output = _load_task_output(task_dir, entry)
     rubric = load_json(task_dir / "reward" / "rubric.json")
     reasons = source_reason_map(task_output)
     sources = []

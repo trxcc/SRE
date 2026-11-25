@@ -297,7 +297,9 @@ def _shadow_ws_task(task_dir: Path, root: Path, rubric: dict[str, Any]) -> Path:
     shadow = root / "task_package"
     reset_dir(shadow)
     for name in ("data_entry.json", "task_output.json"):
-        shutil.copy2(task_dir / name, shadow / name)
+        src = task_dir / name
+        if src.is_file():
+            shutil.copy2(src, shadow / name)
     source_inputs = (task_dir / "input_files").resolve()
     (shadow / "input_files").symlink_to(source_inputs, target_is_directory=True)
     (shadow / "reward").mkdir()

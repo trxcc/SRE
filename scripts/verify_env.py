@@ -72,6 +72,7 @@ def check_required_files(report: Report) -> None:
         "configs/deal-rs-qwen35.recipe.json",
         "configs/deal-ws-gemma4.recipe.json",
         "configs/deal-ws-qwen35.recipe.json",
+        "configs/deal-ws-eval-personas.json",
         "configs/deal-rs.env.example",
         "configs/deal-ws.env.example",
         "configs/reward-service.deal-rs.template.json",

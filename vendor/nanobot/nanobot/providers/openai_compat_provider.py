@@ -645,13 +645,19 @@ class OpenAICompatProvider(LLMProvider):
     ) -> bool:
         """Return True when the model accepts a temperature parameter.
 
-        GPT-5 family and reasoning models (o1/o3/o4) reject temperature
-        when reasoning_effort is set to anything other than ``"none"``.
+        OpenAI GPT-5 family and reasoning models (o1/o3/o4) reject temperature
+        (especially when reasoning_effort is active), whereas open-weight and
+        SGLang-served thinking models (e.g. Gemma4, Qwen3.5) still require the
+        configured sampling temperature.
         """
-        if reasoning_effort and reasoning_effort.lower() != "none":
+        base = model_name.strip().lower().rsplit("/", 1)[-1]
+        if base.startswith("gpt-5"):
             return False
-        name = model_name.lower()
-        return not any(token in name for token in ("gpt-5", "o1", "o3", "o4"))
+        if base in ("o1", "o3", "o4") or base.startswith(
+            ("o1-", "o1.", "o1_", "o3-", "o3.", "o3_", "o4-", "o4.", "o4_")
+        ):
+            return False
+        return True
 
     def _build_kwargs(
         self,
