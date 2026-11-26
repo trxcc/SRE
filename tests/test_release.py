@@ -587,6 +587,111 @@ class DealReleaseTests(unittest.TestCase):
         self.assertIn("--model-path PATH", proc.stdout)
         self.assertIn("--model-family FAMILY", proc.stdout)
 
+    def test_flexible_gpu_topologies_beyond_4plus4(self) -> None:
+        for train_csv, rollout_csv, expected_tp in (
+            ("0,1", "2,3,4,5,6,7", 2),
+            ("0,1,2,3,4,5,6,7", "8,9,10,11", 4),
+            ("0", "1,2", 1),
+        ):
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp_path = Path(tmp)
+                base_model = tmp_path / "model"
+                base_model.mkdir()
+                (base_model / "config.json").write_text("{}\n", encoding="utf-8")
+                data_dir = tmp_path / "data"
+                (data_dir / "train").mkdir(parents=True)
+                (data_dir / "eval").mkdir(parents=True)
+                (data_dir / "DATA_READY.json").write_text(
+                    json.dumps({"train_dir": str(data_dir / "train"), "eval_dir": str(data_dir / "eval")}),
+                    encoding="utf-8",
+                )
+                key_file = tmp_path / "api.key"
+                key_file.write_text("dummy-test-key\n", encoding="utf-8")
+                key_file.chmod(0o600)
+                cfg_file = tmp_path / "local.env"
+                cfg_file.write_text(
+                    "\n".join([
+                        "BENCHMARK=deal-ws",
+                        "MODEL=qwen3.5-9b",
+                        f"BASE_MODEL={base_model}",
+                        f"DATA_DIR={data_dir}",
+                        f"RUN_DIR={tmp_path / 'runs'}",
+                        f"TRAIN_GPUS={train_csv}",
+                        f"ROLLOUT_GPUS={rollout_csv}",
+                        "SELF_REWARD_BASE_URL=http://127.0.0.1:29040/v1",
+                        "SELF_REWARD_MODEL=qwen3.5-9b",
+                        f"SELF_REWARD_API_KEY_FILE={key_file}",
+                        "GT_BASE_URL=http://127.0.0.1:29041/v1",
+                        "GT_MODEL=gemma-4-31B-it",
+                        f"GT_API_KEY_FILE={key_file}",
+                        "HOST_IP=127.0.0.1",
+                    ]) + "\n",
+                    encoding="utf-8",
+                )
+                work = configure(cfg_file, attempt="flex-attempt")
+                env = json.loads((work / "private/environment.json").read_text(encoding="utf-8"))
+                manifest = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
+                n_train = len(train_csv.split(","))
+                n_rollout = len(rollout_csv.split(","))
+                self.assertEqual(int(env["ACTOR_GPUS_PER_NODE"]), n_train)
+                self.assertEqual(int(env["ROLLOUT_NUM_GPUS"]), n_rollout)
+                self.assertEqual(int(env["NUM_GPUS_PER_NODE"]), n_train + n_rollout)
+                self.assertEqual(int(env["TP_SIZE"]), expected_tp)
+                self.assertEqual(int(env["POLAR_EXPECTED_ROLLOUT_ENGINES"]), n_rollout)
+                old_env = os.environ.copy()
+                try:
+                    os.environ.update(env)
+                    summary = validate_recovery_args(_mock_args_from_env(env, manifest))
+                    self.assertEqual(summary["topology"], f"{n_train} train + {n_rollout} rollout")
+                finally:
+                    os.environ.clear()
+                    os.environ.update(old_env)
+
+    def test_intentional_terminal_batch_supports_wsclaw_and_researchclaw(self) -> None:
+        itb_path = ROOT / "vendor/prorl/src/clawgym_nanobot/intentional_terminal_batch.py"
+        spec = importlib.util.spec_from_file_location("_test_itb", itb_path)
+        assert spec is not None and spec.loader is not None
+        itb = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(itb)
+        self.assertEqual(itb._dataset_schedule({"profile": {"dataset": "wsclaw"}}), (125, 2000))
+        self.assertEqual(itb._dataset_schedule({"profile": {"dataset": "researchclaw"}}), (113, 1800))
+
+    def test_checkpoint_pinning_opt_in_when_unset(self) -> None:
+        from clawgym_nanobot.checkpoint_pinning import require_checkpoint_pin_configuration
+
+        old_env = os.environ.copy()
+        try:
+            os.environ.pop("CLAWGYM_HF_MILESTONE_PIN_ROOT", None)
+            require_checkpoint_pin_configuration(types.SimpleNamespace())
+            os.environ["CLAWGYM_HF_MILESTONE_PIN_ROOT"] = "/tmp/pin-root"
+            os.environ.pop("CLAWGYM_HF_MILESTONE_PIN_STEPS", None)
+            with self.assertRaises(ValueError):
+                require_checkpoint_pin_configuration(types.SimpleNamespace())
+        finally:
+            os.environ.clear()
+            os.environ.update(old_env)
+
+    def test_cpu_as_wrapper_and_sidecar_auth_binding(self) -> None:
+        wrapper = ROOT / "runtime/ws_judge/cpu_as_wrapper.py"
+        proc = subprocess.run(
+            [sys.executable, str(wrapper), "--gib", "48", "--", sys.executable, "-c", "print('ok')"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(proc.stdout.strip(), "ok")
+        sidecar_text = (ROOT / "runtime/ws_judge/judge_sidecar.sh").read_text(encoding="utf-8")
+        self.assertIn('GEMMA4_CPU_AS_WRAPPER="${GEMMA4_CPU_AS_WRAPPER:-${SCRIPT_DIR}/cpu_as_wrapper.py}"', sidecar_text)
+        self.assertIn('--api-key "${WSCLAW_JUDGE_API_KEY:-apiKey}"', sidecar_text)
+
+    def test_qwen_megatron_actor_bundles_cursor_and_rollout_allows_any_resume_step(self) -> None:
+        megatron_actor = (ROOT / "vendor/slime/slime/backends/megatron_utils/actor.py").read_text(encoding="utf-8")
+        self.assertIn("bundle_cursor(incomplete, self.args.save or requested, rollout_id)", megatron_actor)
+        rollout_src = (ROOT / "vendor/slime/slime/ray/rollout.py").read_text(encoding="utf-8")
+        self.assertNotIn("start_rollout_id in (0, 112)", rollout_src)
+        self.assertIn("0 <= int(self.args.start_rollout_id) <= 113", rollout_src)
+        self.assertIn('64 % int(self.train_parallel_config["dp_size"]) == 0', rollout_src)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -506,12 +506,12 @@ if [ "${SMOKE_TEST:-0}" = "1" ]; then
     export WANDB_MODE="${WANDB_MODE:-disabled}"
 fi
 
-export PATH="${SLIME_CONTAINER_PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+export PATH="${SLIME_CONTAINER_PATH:-${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}}"
 export LD_LIBRARY_PATH="${SLIME_CONTAINER_LD_LIBRARY_PATH:-/usr/local/lib/python3.12/dist-packages/nvidia/cublas/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cuda_cupti/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cuda_nvrtc/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cuda_runtime/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cufft/lib:/usr/local/lib/python3.12/dist-packages/nvidia/curand/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cusolver/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cusparse/lib:/usr/local/lib/python3.12/dist-packages/nvidia/nccl/lib:/usr/local/lib/python3.12/dist-packages/nvidia/nvjitlink/lib:/usr/local/lib/python3.12/dist-packages/nvidia/nvtx/lib:/usr/local/lib/python3.12/dist-packages/tvm_ffi/lib:/usr/local/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/.singularity.d/libs:/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu}"
 export TRAIN_NODE_HOST="${SLURMD_NODENAME:-$(hostname)}"
-export CC="/usr/bin/gcc"
-export CXX="/usr/bin/g++"
-export CUDAHOSTCXX="/usr/bin/g++"
+export CC="${CC:-$(command -v gcc || echo /usr/bin/gcc)}"
+export CXX="${CXX:-$(command -v g++ || echo /usr/bin/g++)}"
+export CUDAHOSTCXX="${CUDAHOSTCXX:-${CXX}}"
 unset PYTHONPATH PYTHONHOME PYTHONUSERBASE CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_SHLVL VIRTUAL_ENV
 unset LIBRARY_PATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH CPATH
 export LIBRARY_PATH=""
@@ -621,21 +621,33 @@ if [ "${TRAIN_BACKEND}" = automodel ] || [ "${TRAIN_BACKEND}" = nemo_megatron ];
     : "${NEMO_AUTOMODEL_PYDEPS:?NEMO_AUTOMODEL_PYDEPS is required for NeMo-RL backends}"
     : "${NEMO_AUTOMODEL_TRANSFORMERS_ROOT:?NEMO_AUTOMODEL_TRANSFORMERS_ROOT is required for NeMo-RL backends}"
     : "${AUTOMODEL_CONFIG:?AUTOMODEL_CONFIG is required for NeMo-RL backends}"
-    test -d "${NEMO_RL_ROOT}/nemo_rl"
-    test -d "${NEMO_AUTOMODEL_PYDEPS}"
-    test -d "${NEMO_AUTOMODEL_TRANSFORMERS_ROOT}/transformers"
-    test -s "${AUTOMODEL_CONFIG}"
+    test -d "${NEMO_RL_ROOT}/nemo_rl" || { echo "ERROR: nemo_rl not found at ${NEMO_RL_ROOT}/nemo_rl" >&2; exit 1; }
+    test -s "${AUTOMODEL_CONFIG}" || { echo "ERROR: AUTOMODEL_CONFIG missing: ${AUTOMODEL_CONFIG}" >&2; exit 1; }
+    if [ "${RESEARCHCLAW_RENDER_ONLY:-0}" != "1" ]; then
+        test -d "${NEMO_AUTOMODEL_PYDEPS}" || { echo "ERROR: NEMO_AUTOMODEL_PYDEPS missing: ${NEMO_AUTOMODEL_PYDEPS}" >&2; exit 1; }
+        test -d "${NEMO_AUTOMODEL_TRANSFORMERS_ROOT}/transformers" || {
+            echo "ERROR: transformers package not found under ${NEMO_AUTOMODEL_TRANSFORMERS_ROOT}; run scripts/install.sh" >&2
+            exit 1
+        }
+    fi
     if [ "${TRAIN_BACKEND}" = automodel ]; then
         : "${NEMO_AUTOMODEL_ROOT:?NEMO_AUTOMODEL_ROOT is required for AutoModel}"
         : "${NEMO_AUTOMODEL_SUPPORT_PYDEPS:?NEMO_AUTOMODEL_SUPPORT_PYDEPS is required for AutoModel}"
         : "${NEMO_AUTOMODEL_CUTLASS_PACKAGES:?NEMO_AUTOMODEL_CUTLASS_PACKAGES is required for AutoModel}"
-        test -d "${NEMO_AUTOMODEL_ROOT}/nemo_automodel"
-        test -d "${NEMO_AUTOMODEL_SUPPORT_PYDEPS}"
-        test -d "${NEMO_AUTOMODEL_CUTLASS_PACKAGES}/cutlass"
+        if [ "${RESEARCHCLAW_RENDER_ONLY:-0}" != "1" ]; then
+            test -d "${NEMO_AUTOMODEL_ROOT}/nemo_automodel"
+            test -d "${NEMO_AUTOMODEL_SUPPORT_PYDEPS}"
+            test -d "${NEMO_AUTOMODEL_CUTLASS_PACKAGES}/cutlass"
+        fi
         AUTOMODEL_PYTHONPATH="${NEMO_AUTOMODEL_TRANSFORMERS_ROOT}:${NEMO_AUTOMODEL_CUTLASS_PACKAGES}:${NEMO_AUTOMODEL_PYDEPS}:${NEMO_AUTOMODEL_SUPPORT_PYDEPS}:${NEMO_RL_ROOT}:${NEMO_AUTOMODEL_ROOT}:"
     else
         : "${NEMO_AUTOMODEL_SUPPORT_PYDEPS:?NEMO_AUTOMODEL_SUPPORT_PYDEPS is required for NeMo Megatron}"
-        test -d "${NEMO_AUTOMODEL_SUPPORT_PYDEPS}/hydra"
+        if [ "${RESEARCHCLAW_RENDER_ONLY:-0}" != "1" ]; then
+            test -d "${NEMO_AUTOMODEL_SUPPORT_PYDEPS}/hydra" || {
+                echo "ERROR: hydra-core not linked under ${NEMO_AUTOMODEL_SUPPORT_PYDEPS}/hydra; install hydra-core" >&2
+                exit 1
+            }
+        fi
         test ! -e "${NEMO_AUTOMODEL_SUPPORT_PYDEPS}/transformers"
         # Preserve the image's pinned Megatron/Transformers stack while adding
         # only NeMo-RL's pure-Python support dependencies to the Ray job and
@@ -767,7 +779,7 @@ prepare_private_env_file() {
     elif [[ "${file_path}" != /* ]]; then
         echo "ERROR: ${file_name} must be an absolute path" >&2
         exit 1
-    elif [ ! -s "${file_path}" ] || [ "$(stat -c '%a' "${file_path}")" != 600 ]; then
+    elif [ ! -s "${file_path}" ] || ! python3 -c 'import os,stat,sys; raise SystemExit(0 if stat.S_IMODE(os.stat(sys.argv[1]).st_mode)==0o600 else 1)' "${file_path}"; then
         echo "ERROR: ${file_name} must name a non-empty mode-0600 file" >&2
         exit 1
     fi
@@ -873,16 +885,18 @@ export CLAWGYM_HF_CHECKPOINT_ROOT="${CLAWGYM_HF_CHECKPOINT_ROOT:-${SAVE_DIR}}"
 export CLAWGYM_EVAL_SNAPSHOT_ROOT="${CLAWGYM_EVAL_SNAPSHOT_ROOT:-${LOG_DIR}/eval_snapshots}"
 export CLAWGYM_HF_CHECKPOINT_MIN_EVAL_COVERAGE="${CLAWGYM_HF_CHECKPOINT_MIN_EVAL_COVERAGE:-0.95}"
 export NANOBOT_WORKDIR="${NANOBOT_WORKDIR:-${LOG_DIR}/nanobot_work}"
-INTERNAL_NO_PROXY="127.0.0.1,localhost,${MASTER_ADDR},${MASTER_ADDR,,}"
+master_addr_lower="$(printf '%s' "${MASTER_ADDR}" | tr '[:upper:]' '[:lower:]')"
+INTERNAL_NO_PROXY="127.0.0.1,localhost,${MASTER_ADDR},${master_addr_lower}"
 IFS=',' read -r -a CLAWGYM_NO_PROXY_HOST_ARRAY <<< "${CLAWGYM_NODE_HOSTS:-}"
 for host in "${CLAWGYM_NO_PROXY_HOST_ARRAY[@]}"; do
     if [ -n "${host}" ]; then
-        INTERNAL_NO_PROXY="${INTERNAL_NO_PROXY},${host},${host,,}"
+        host_lower="$(printf '%s' "${host}" | tr '[:upper:]' '[:lower:]')"
+        INTERNAL_NO_PROXY="${INTERNAL_NO_PROXY},${host},${host_lower}"
     fi
 done
 export NO_PROXY="${NO_PROXY:+${NO_PROXY},}${INTERNAL_NO_PROXY}"
 export no_proxy="${no_proxy:+${no_proxy},}${INTERNAL_NO_PROXY}"
-unset CLAWGYM_NO_PROXY_HOST_ARRAY INTERNAL_NO_PROXY
+unset CLAWGYM_NO_PROXY_HOST_ARRAY INTERNAL_NO_PROXY master_addr_lower host_lower
 
 TRAIN_PROMPT_DATA="${TRAIN_PROMPT_DATA:-${LOG_DIR}/prompt_data/claw_train.jsonl}"
 EVAL_PROMPT_DATA="${EVAL_PROMPT_DATA:-${LOG_DIR}/prompt_data/clawgym_eval.jsonl}"
@@ -937,7 +951,7 @@ create_prompt_data() {
         --output "${output}" \
         --limit "${limit}" \
         --turn-type "${turn_type}" \
-        "${extra_args[@]}"
+        ${extra_args[@]+"${extra_args[@]}"}
 }
 
 if [ "${DO_EVAL}" = "1" ] && [ "${NODE_RANK}" = "0" ]; then
@@ -2314,7 +2328,7 @@ if [ "${NODE_RANK}" = "0" ]; then
             --prompt-data "${TRAIN_PROMPT_DATA}"
             --input-key input
             --metadata-key metadata
-            "${ROLLOUT_SHUFFLE_ARGS[@]}"
+            ${ROLLOUT_SHUFFLE_ARGS[@]+"${ROLLOUT_SHUFFLE_ARGS[@]}"}
             --sglang-router-port "${SGLANG_ROUTER_PORT}"
             --router-policy "${SGLANG_ROUTER_POLICY}"
             --router-assignment-mode "${SGLANG_ROUTER_ASSIGNMENT_MODE}"
@@ -2357,14 +2371,14 @@ if [ "${NODE_RANK}" = "0" ]; then
         --rollout-num-gpus "${ROLLOUT_NUM_GPUS}" \
         --num-gpus-per-node "${NUM_GPUS_PER_NODE}" \
         "${TRAIN_BACKEND_ARGS[@]}" \
-        "${TRAIN_MODE_ARGS[@]}" \
+        ${TRAIN_MODE_ARGS[@]+"${TRAIN_MODE_ARGS[@]}"} \
         "${MODEL_ARGS[@]}" \
-        "${CUSTOM_MODEL_PROVIDER_ARGS[@]}" \
-        "${MEGATRON_CONFIG_ARGS[@]}" \
+        ${CUSTOM_MODEL_PROVIDER_ARGS[@]+"${CUSTOM_MODEL_PROVIDER_ARGS[@]}"} \
+        ${MEGATRON_CONFIG_ARGS[@]+"${MEGATRON_CONFIG_ARGS[@]}"} \
         --hf-checkpoint "${HF_CHECKPOINT}" \
         --ref-load "${REF_LOAD}" \
-        "${CKPT_ARGS[@]}" \
-        "${SAVE_ARGS[@]}" \
+        ${CKPT_ARGS[@]+"${CKPT_ARGS[@]}"} \
+        ${SAVE_ARGS[@]+"${SAVE_ARGS[@]}"} \
         --megatron-to-hf-mode "${MEGATRON_TO_HF_MODE:-bridge}" \
         "${WEIGHT_SYNC_ARGS[@]}" \
         --train-env-vars "${TRAIN_ENV_VARS_JSON}" \
@@ -2389,8 +2403,8 @@ if [ "${NODE_RANK}" = "0" ]; then
         --tensor-model-parallel-size "${TP_SIZE}" \
         --context-parallel-size "${CP_SIZE}" \
         --pipeline-model-parallel-size "${PP_SIZE}" \
-        "${PIPELINE_LAYOUT_ARGS[@]}" \
-        "${SEQUENCE_PARALLEL_ARGS[@]}" \
+        ${PIPELINE_LAYOUT_ARGS[@]+"${PIPELINE_LAYOUT_ARGS[@]}"} \
+        ${SEQUENCE_PARALLEL_ARGS[@]+"${SEQUENCE_PARALLEL_ARGS[@]}"} \
         --use-dynamic-batch-size \
         --max-tokens-per-gpu "${MAX_TOKENS_PER_GPU}" \
         --log-probs-chunk-size "${LOG_PROBS_CHUNK_SIZE}" \
@@ -2410,9 +2424,9 @@ if [ "${NODE_RANK}" = "0" ]; then
         --attention-softmax-in-fp32 \
         --attention-backend flash \
         "${TRAIN_COMPAT_ARGS[@]}" \
-        "${EVAL_ARGS[@]}" \
-        "${WANDB_ARGS[@]}" \
-        "${EXTRA_ARGS[@]}" \
+        ${EVAL_ARGS[@]+"${EVAL_ARGS[@]}"} \
+        ${WANDB_ARGS[@]+"${WANDB_ARGS[@]}"} \
+        ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
         >"${TRAIN_SUBMIT_OUTPUT}" 2>&1
     submit_status="$?"
     cat "${TRAIN_SUBMIT_OUTPUT}" >>"${TRAIN_LOG}"

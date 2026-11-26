@@ -158,15 +158,16 @@ PY
     done
 }
 
-python3 "${GEMMA4_CPU_AS_WRAPPER:?CPU AS wrapper required}" --gib 48 -- python3 "${PROXY_SCRIPT}" --host 0.0.0.0 --port "${PROXY_PORT}" \
+GEMMA4_CPU_AS_WRAPPER="${GEMMA4_CPU_AS_WRAPPER:-${SCRIPT_DIR}/cpu_as_wrapper.py}"
+python3 "${GEMMA4_CPU_AS_WRAPPER}" --gib 48 -- python3 "${PROXY_SCRIPT}" --host 0.0.0.0 --port "${PROXY_PORT}" \
     >"${NODE_ROOT}/proxy.log" 2>&1 &
 proxy_pid=$!
 wait_owned_health "http://127.0.0.1:${PROXY_PORT}/health" "${proxy_pid}" judge-proxy
 
-python3 "${GEMMA4_CPU_AS_WRAPPER:?CPU AS wrapper required}" --gib 48 -- python3 "${WORKER_SCRIPT}" \
+python3 "${GEMMA4_CPU_AS_WRAPPER}" --gib 48 -- python3 "${WORKER_SCRIPT}" \
     --host 0.0.0.0 --port "${WORKER_PORT}" \
     --workers "${WSCLAW_JUDGE_WORKERS_PER_NODE}" \
-    --api-key apiKey \
+    --api-key "${WSCLAW_JUDGE_API_KEY:-apiKey}" \
     --judge-api-base "http://127.0.0.1:${PROXY_PORT}" \
     --judge-api-key apiKey \
     --judge-model "${WSCLAW_JUDGE_MODEL}" \

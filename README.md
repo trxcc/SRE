@@ -51,7 +51,7 @@
 
 In real-world deployment, user assistants face a **single-feedback constraint**: tasks arrive sequentially, and the user evaluates only one delivered outcome $F_t = (u_t, c_t)$ per task before moving on.
 
-- **DEAL (*Deployment-time Evaluation of Agent Learning*)**: An executable testbed covering **Workplace Assistance (`DEAL-WS`, 2,000 online / 200 test)** and **AI Research (`DEAL-RS`, 1,800 online / 200 test)**, where agents interact with grounded files and tools through the `nanobot` harness across related task streams.
+- **DEAL (*Deployment-time Evaluation of Agent Learning*)**: An executable testbed covering **Workspace Assistance (`DEAL-WS`, 2,000 online / 200 test)** and **AI Research (`DEAL-RS`, 1,800 online / 200 test)**, where agents interact with grounded files and tools through the `nanobot` harness across related task streams.
 - **Self-Rewarded Exploration (SRE)**: Single-rollout RL suffers from an *exploration bottleneck* when only one trajectory is evaluated per task. After live execution, SRE asynchronously expands $K = 7$ additional rollouts in isolated copies of the initial task snapshot, uses the frozen initial model $\pi_{\theta_0}$ to build a feedback-anchored rubric $\mathcal{Q}_t$ from $(x_t, \tau_t, F_t)$ and score internal candidates without exposing $F_t$, and applies GRPO updates over the internal self-rewarded rollouts.
 
 ---
@@ -65,7 +65,7 @@ All public artifacts are organized in the [**SRE-DEAL Hugging Face Collection**]
 
 | Dataset | Domain | Online Stream | Held-out Test | Context / Max Output | Hugging Face | Workspace Materialization |
 |---|---|---:|---:|---|---|---|
-| **DEAL-WS** | Workplace Assistance (Ops, Logistics, Research, Dev, Product) | 2,000 | 200 | 64K / 8K | [`trxcc2002/DEAL-WS`](https://huggingface.co/datasets/trxcc2002/DEAL-WS) | Task overlays bundled + upstream `filesys_en.zip` from [`Workspace-Bench`](https://huggingface.co/datasets/Workspace-Bench/Workspace-Bench-Workspaces) |
+| **DEAL-WS** | Workspace Assistance (Ops, Logistics, Research, Dev, Product) | 2,000 | 200 | 64K / 8K | [`trxcc2002/DEAL-WS`](https://huggingface.co/datasets/trxcc2002/DEAL-WS) | Task overlays bundled + upstream `filesys_en.zip` from [`Workspace-Bench`](https://huggingface.co/datasets/Workspace-Bench/Workspace-Bench-Workspaces) |
 | **DEAL-RS** | AI Research (Comp., Align., Verify., Workflow, Audit) | 1,800 | 200 | 72K / 16K (eval: 80K / 16K) | [`trxcc2002/DEAL-RS`](https://huggingface.co/datasets/trxcc2002/DEAL-RS) | Self-contained paper &amp; repo snapshots in `assets/workspaces-*.zip` |
 
 ### Released Checkpoints (Last Checkpoints)
@@ -73,9 +73,9 @@ All public artifacts are organized in the [**SRE-DEAL Hugging Face Collection**]
 | Model | Base Backbone | Domain | Held-out ID | OOD Benchmark(s) | Hugging Face |
 |---|---|---|---:|---|---|
 | **DEAL-RS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | AI Research (`DEAL-RS`) | **41.22** *(Base: 21.30)* | AARRI-Bench: **38.60** | [`trxcc2002/DEAL-RS-Gemma`](https://huggingface.co/trxcc2002/DEAL-RS-Gemma) |
-| **DEAL-WS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | Workplace (`DEAL-WS`) | **46.81** *(Base: 40.24)* | PinchBench: **59.54** / ClawGym: **50.27** | [`trxcc2002/DEAL-WS-Gemma`](https://huggingface.co/trxcc2002/DEAL-WS-Gemma) |
+| **DEAL-WS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | Workspace (`DEAL-WS`) | **46.81** *(Base: 40.24)* | PinchBench: **59.54** / ClawGym: **50.27** | [`trxcc2002/DEAL-WS-Gemma`](https://huggingface.co/trxcc2002/DEAL-WS-Gemma) |
 | **DEAL-RS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | AI Research (`DEAL-RS`) | **60.56** *(Base: 56.04)* | AARRI-Bench: **48.31** | [`trxcc2002/DEAL-RS-Qwen`](https://huggingface.co/trxcc2002/DEAL-RS-Qwen) |
-| **DEAL-WS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | Workplace (`DEAL-WS`) | **68.50** *(Base: 57.74)* | PinchBench: **85.82** / ClawGym: **63.12** | [`trxcc2002/DEAL-WS-Qwen`](https://huggingface.co/trxcc2002/DEAL-WS-Qwen) |
+| **DEAL-WS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | Workspace (`DEAL-WS`) | **68.50** *(Base: 57.74)* | PinchBench: **85.82** / ClawGym: **63.12** | [`trxcc2002/DEAL-WS-Qwen`](https://huggingface.co/trxcc2002/DEAL-WS-Qwen) |
 
 ---
 
@@ -98,7 +98,7 @@ All public artifacts are organized in the [**SRE-DEAL Hugging Face Collection**]
 | REINFORCE++ | <u>+5.63</u> | <u>31.34</u> | <u>43.40</u> | <u>55.26</u> | **29.68** | <u>29.64</u> | <u>36.95</u> | <u>37.01</u> | <u>52.97</u> |
 | **SRE (`DEAL-RS-Gemma`)** | **+10.66** | **36.91** | **47.89** | **55.93** | <u>28.65</u> | **41.63** | **41.22** | **38.60** | **55.16** |
 
-#### Workplace Assistance Stream (`DEAL-WS`)
+#### Workspace Assistance Stream (`DEAL-WS`)
 
 | Method | Online Gain | Ops. | Log. | Res. | Dev. | Prod. | **DEAL-WS Avg. (ID)** | **PinchBench (OOD)** | **ClawGym-Bench (OOD)** | **General Cap.** |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|

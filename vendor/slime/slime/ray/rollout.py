@@ -572,7 +572,7 @@ class RolloutManager:
                 and self.args.rollout_batch_size == 16
                 and self.args.n_samples_per_prompt == 8
                 and self.args.num_rollout == 113
-                and self.args.start_rollout_id in (0, 112)
+                and 0 <= int(self.args.start_rollout_id) <= 113
             ):
                 raise RuntimeError("finite1800 epoch schedule identity mismatch")
             # The final eight groups form the 113th real delivery.
@@ -1032,11 +1032,11 @@ class RolloutManager:
             if not (
                 self.args.data_source_path == "clawgym_nanobot.polar_data.FiniteSequentialRolloutDataSource"
                 and self.args.num_rollout == 113
-                and self.args.start_rollout_id in (0, 112)
+                and 0 <= int(self.args.start_rollout_id) <= 112
                 and self.args.rollout_batch_size == 16
                 and self.args.n_samples_per_prompt == 8
                 and self.args.global_batch_size == 128
-                and self.train_parallel_config["dp_size"] == 1
+                and 64 % int(self.train_parallel_config["dp_size"]) == 0
                 and self.train_parallel_config["cp_size"] == 1
                 and self.train_parallel_config["vpp_size"] == 1
                 and os.getenv("SLIME_PAD_DYNAMIC_DP_SAMPLES", "0") == "0"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create isolated single-host (4 train + 4 rollout) run configuration for DEAL-WS / DEAL-RS.
+"""Create isolated single-host run configuration for DEAL-WS / DEAL-RS.
 
 Credentials remain in chmod-600 private files/environment and are never hardcoded in configs.
 """
@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import secrets
@@ -131,6 +132,16 @@ def _resolve_model_config_script(model_name: str, v: Path) -> Path:
     raise ValueError(f"Unsupported model: {model_name!r}")
 
 
+def _discover_package_parent(module_name: str, fallback: Path) -> Path:
+    spec = importlib.util.find_spec(module_name)
+    if spec is not None and spec.origin is not None:
+        origin = Path(spec.origin).resolve()
+        parent = origin.parent.parent if origin.name == "__init__.py" else origin.parent
+        if parent.is_dir():
+            return parent
+    return fallback
+
+
 def configure(config_file: Path, attempt: str | None = None) -> Path:
     c = read_env(config_file)
     benchmark = c.get("BENCHMARK", "").strip().lower()
@@ -179,17 +190,32 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
     assert sr_url.startswith(("http://", "https://")) and "YOUR-" not in sr_url, "Configure SELF_REWARD_BASE_URL"
     assert sr_model and "YOUR-" not in sr_model, "Configure SELF_REWARD_MODEL"
 
-    # Unified 4 train + 4 rollout GPU layout (8 GPUs total)
     train_gpus = [x.strip() for x in c.get("TRAIN_GPUS", "0,1,2,3").split(",") if x.strip()]
     rollout_gpus = [x.strip() for x in c.get("ROLLOUT_GPUS", "4,5,6,7").split(",") if x.strip()]
-    assert len(train_gpus) == 4 and len(rollout_gpus) == 4 and len(set(train_gpus + rollout_gpus)) == 8, (
-        "Unified topology requires 4 train GPUs + 4 rollout GPUs (8 distinct GPUs total)"
+    total_gpus = len(train_gpus) + len(rollout_gpus)
+    assert train_gpus and rollout_gpus and len(set(train_gpus + rollout_gpus)) == total_gpus, (
+        "TRAIN_GPUS and ROLLOUT_GPUS must be non-empty and disjoint GPU device ID lists"
     )
 
     host = c.get("HOST_IP") or socket.gethostbyname(socket.gethostname())
+    hostname = socket.gethostname()
     env = json.loads((ROOT / spec["recipes"][model_name]).read_text(encoding="utf-8"))
+    gpus_per_engine = int(c.get("ROLLOUT_GPUS_PER_ENGINE") or env.get("ROLLOUT_GPUS", "1"))
+    assert gpus_per_engine >= 1 and len(rollout_gpus) % gpus_per_engine == 0, (
+        f"ROLLOUT_GPUS count ({len(rollout_gpus)}) must be divisible by ROLLOUT_GPUS_PER_ENGINE ({gpus_per_engine})"
+    )
+    default_tp = next(tp for tp in (4, 2, 1) if len(train_gpus) % tp == 0)
+    tp_size = int(c.get("TP_SIZE") or default_tp)
+    cp_size = int(c.get("CP_SIZE") or env.get("CP_SIZE", "1"))
+    pp_size = int(c.get("PP_SIZE") or env.get("PP_SIZE", "1"))
+    assert tp_size >= 1 and cp_size >= 1 and pp_size >= 1 and len(train_gpus) % (tp_size * cp_size * pp_size) == 0, (
+        f"TRAIN_GPUS count ({len(train_gpus)}) must be divisible by TP*CP*PP ({tp_size}*{cp_size}*{pp_size})"
+    )
+
     v = ROOT / "vendor"
-    lib = Path(site.getsitepackages()[0])
+    site_pkgs = site.getsitepackages()
+    lib = Path(site_pkgs[0]) if site_pkgs else Path(sysconfig.get_path("purelib"))
+    transformers_root = _discover_package_parent("transformers", lib)
     startup = v / "prorl/scripts/trx_scripts/gemma4_python_startup"
     model_config_script = _resolve_model_config_script(model_name, v)
 
@@ -206,11 +232,17 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
             env[port_key] = c[port_key]
 
     sglang_root = c.get("SGLANG_ROOT", "").strip()
+    run_id = run.name + "-" + attempt
+    exec_guard_dir = work / "logs/exec-memory/rank0"
     env.update({
         "NANOBOT_CONDA_ENV_NAME": sys.prefix,
+        "SLIME_CONTAINER_PATH": (
+            f"{Path(sys.executable).resolve().parent}:"
+            + os.environ.get("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+        ),
         "BUNDLE_ROOT": str(ROOT),
         "STATE_ROOT": str(work),
-        "RUN_ID": run.name + "-" + attempt,
+        "RUN_ID": run_id,
         "LOG_DIR": str(work / "logs"),
         "SAVE_DIR": str(run / "checkpoints"),
         "PROJECT_ROOT": str(v / "prorl"),
@@ -227,7 +259,7 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
         "NEMO_RL_ROOT": str(v / "nemo-rl"),
         "NEMO_AUTOMODEL_PYDEPS": str(lib),
         "NEMO_AUTOMODEL_SUPPORT_PYDEPS": str(ROOT / "runtime/support"),
-        "NEMO_AUTOMODEL_TRANSFORMERS_ROOT": str(lib),
+        "NEMO_AUTOMODEL_TRANSFORMERS_ROOT": str(transformers_root),
         "AUTOMODEL_CONFIG": str(v / "nemo-rl/examples/configs/grpo_math_8B_megatron.yaml"),
         "MODEL_CONFIG_SCRIPT": str(model_config_script),
         "POLAR_TEMPLATE_DIR": str(v / "prorl/scripts/clawgym_nanobot/polar"),
@@ -250,7 +282,15 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
         "POLAR_GATEWAY_HOST": host,
         "SLIME_ACTOR_NODE_IPS": host,
         "POLAR_EXACT_TOKEN_STUDENT_HOSTS": host,
-        "POLAR_EXPECTED_ROLLOUT_ENGINES": "4",
+        "RAY_GPUS_PER_NODE": str(total_gpus),
+        "NUM_GPUS_PER_NODE": str(total_gpus),
+        "ACTOR_GPUS_PER_NODE": str(len(train_gpus)),
+        "ROLLOUT_NUM_GPUS": str(len(rollout_gpus)),
+        "ROLLOUT_GPUS": str(gpus_per_engine),
+        "POLAR_EXPECTED_ROLLOUT_ENGINES": str(len(rollout_gpus) // gpus_per_engine),
+        "TP_SIZE": str(tp_size),
+        "CP_SIZE": str(cp_size),
+        "PP_SIZE": str(pp_size),
         "NODE_RANK": "0",
         "CUDA_VISIBLE_DEVICES": ",".join(train_gpus + rollout_gpus),
         "RAY_TMPDIR": str(run / "ray"),
@@ -273,10 +313,10 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
         ),
         "SLIME_METRICS_JSONL_PATH": str(work / "logs/metrics.jsonl"),
         "SGLANG_MAX_RUNNING_REQUESTS": c.get("ROLLOUT_MAX_RUNNING_REQUESTS", "32"),
-        "WSCLAW_EXEC_GUARD_SCOPE": run.name + "-" + attempt,
-        "WSCLAW_EXEC_GUARD_STATE_DIR": str(work / "exec-memory"),
-        "WSCLAW_EXEC_GUARD_GATE_FILE": str(work / "exec-memory/gate.json"),
-        "WSCLAW_EXEC_GUARD_HEARTBEAT_FILE": str(work / "exec-memory/heartbeat.json"),
+        "WSCLAW_EXEC_GUARD_SCOPE": f"{run_id}:rank0:{hostname}",
+        "WSCLAW_EXEC_GUARD_STATE_DIR": str(exec_guard_dir),
+        "WSCLAW_EXEC_GUARD_GATE_FILE": str(exec_guard_dir / "block-new-exec.json"),
+        "WSCLAW_EXEC_GUARD_HEARTBEAT_FILE": str(exec_guard_dir / "heartbeat.json"),
         "TRITON_CACHE_DIR": str(run / "cache/triton"),
         "TORCH_EXTENSIONS_DIR": str(run / "cache/torch"),
         "TVM_FFI_CACHE_DIR": str(run / "cache/tvm"),
@@ -345,7 +385,13 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
         "eval_failure_policy": "score_zero_and_continue",
         "optimizer_saved": False,
         "optimizer_scheduler_rng_action": "native_reinitialize",
-        "topology": "single-host 4 train + 4 rollout",
+        "train_gpus": len(train_gpus),
+        "rollout_gpus": len(rollout_gpus),
+        "tp_size": tp_size,
+        "cp_size": cp_size,
+        "pp_size": pp_size,
+        "rollout_gpus_per_engine": gpus_per_engine,
+        "topology": f"single-host {len(train_gpus)} train + {len(rollout_gpus)} rollout",
         "candidate_count": 8,
         "hardgate": benchmark == "deal-ws",
     }
@@ -395,6 +441,8 @@ def configure(config_file: Path, attempt: str | None = None) -> Path:
     services: dict = {
         "benchmark": benchmark,
         "model_name": model_name,
+        "train_gpus": len(train_gpus),
+        "rollout_gpus": len(rollout_gpus),
         "self_reward_url": sr_url,
         "self_reward_model": sr_model,
         "self_reward_key_file": str(sr_key),

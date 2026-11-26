@@ -75,11 +75,14 @@ def main() -> None:
         print("All runtime dependency imports passed; no model weights loaded.")
 
     if a.gpu:
+        expected_gpus = int(os.environ.get("NUM_GPUS_PER_NODE", "8"))
         rows = subprocess.check_output(
             ["nvidia-smi", "--query-gpu=index,name,memory.total", "--format=csv,noheader"],
             text=True,
         ).strip().splitlines()
-        assert len(rows) >= 8, f"Unified 4 train + 4 rollout layout requires at least 8 GPUs, found {len(rows)}"
+        assert len(rows) >= expected_gpus, (
+            f"Configured GPU layout requires at least {expected_gpus} GPUs, found {len(rows)}"
+        )
         print("\n".join(rows))
 
     if not (a.imports or a.gpu):

@@ -91,6 +91,19 @@ def validate_recovery_args(args):
         expected_async_level = "2"
         expected_microcompact = "1"
 
+    train_gpus = int(manifest.get("train_gpus", 4))
+    rollout_gpus = int(manifest.get("rollout_gpus", 4))
+    tp_size = int(manifest.get("tp_size", min(4, train_gpus)))
+    cp_size = int(manifest.get("cp_size", 1))
+    pp_size = int(manifest.get("pp_size", 1))
+    gpus_per_engine = int(manifest.get("rollout_gpus_per_engine", 1))
+    if train_gpus < 1 or rollout_gpus < 1 or gpus_per_engine < 1:
+        raise ValueError("Invalid GPU counts in manifest")
+    if train_gpus % (tp_size * cp_size * pp_size) != 0:
+        raise ValueError("train_gpus must be divisible by tp_size * cp_size * pp_size")
+    if rollout_gpus % gpus_per_engine != 0:
+        raise ValueError("rollout_gpus must be divisible by rollout_gpus_per_engine")
+
     exact = dict(
         train_backend=expected_backend,
         advantage_estimator="grpo",
@@ -100,15 +113,14 @@ def validate_recovery_args(args):
         global_batch_size=128,
         num_steps_per_rollout=1,
         normalize_advantages=False,
-        # Unified 4 train + 4 rollout single-host layout
         actor_num_nodes=1,
-        actor_num_gpus_per_node=4,
-        rollout_num_gpus=4,
-        num_gpus_per_node=8,
-        tensor_model_parallel_size=4,
-        context_parallel_size=1,
-        pipeline_model_parallel_size=1,
-        rollout_num_gpus_per_engine=1,
+        actor_num_gpus_per_node=train_gpus,
+        rollout_num_gpus=rollout_gpus,
+        num_gpus_per_node=train_gpus + rollout_gpus,
+        tensor_model_parallel_size=tp_size,
+        context_parallel_size=cp_size,
+        pipeline_model_parallel_size=pp_size,
+        rollout_num_gpus_per_engine=gpus_per_engine,
         no_load_optim=True,
         no_load_rng=True,
         seq_length=seq_length,
@@ -154,7 +166,7 @@ def validate_recovery_args(args):
         "model": model_name,
         "base": manifest["original_checkpoint"],
         "candidate_count": 8,
-        "topology": "4 train + 4 rollout",
+        "topology": f"{train_gpus} train + {rollout_gpus} rollout",
     }
 
 

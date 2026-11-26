@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Unified single-host launcher (4 train + 4 rollout GPUs) for DEAL-WS and DEAL-RS."""
+"""Unified single-host launcher for DEAL-WS and DEAL-RS."""
 from __future__ import annotations
 
 import argparse
 import json
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -15,6 +16,13 @@ import urllib.request
 from pathlib import Path
 
 from configure_run import ROOT, configure
+
+
+def _bash_bin() -> str:
+    for candidate in ("/opt/homebrew/bin/bash", "/usr/local/bin/bash"):
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return shutil.which("bash") or "bash"
 
 
 def wait_http(url: str, process: subprocess.Popen, timeout: int = 900) -> None:
@@ -69,15 +77,17 @@ def main() -> None:
     for k in ("RANK", "WORLD_SIZE", "LOCAL_RANK", "GROUP_RANK", "ROLE_RANK"):
         env.pop(k, None)
 
+    bash_bin = _bash_bin()
+    topo_desc = f"{services.get('train_gpus', 4)} train + {services.get('rollout_gpus', 4)} rollout"
     if args.check:
         env["RESEARCHCLAW_RENDER_ONLY"] = "1"
-        subprocess.run(["bash", str(ROOT / "runtime/run_core.sh")], env=env, check=True)
+        subprocess.run([bash_bin, str(ROOT / "runtime/run_core.sh")], env=env, check=True)
         subprocess.run(
             [sys.executable, str(ROOT / "scripts/check_native.py"), str(work / "logs/captured-cli.json")],
             env=env,
             check=True,
         )
-        print(f"Native CPU preflight passed for {benchmark} ({services['model_name']}, 4 train + 4 rollout).")
+        print(f"Native CPU preflight passed for {benchmark} ({services['model_name']}, {topo_desc}).")
         return
 
     subprocess.run([sys.executable, str(ROOT / "scripts/doctor.py"), "--gpu"], env=env, check=True)
@@ -124,7 +134,7 @@ def main() -> None:
             judge_env = dict(env, CUDA_VISIBLE_DEVICES="")
             ws_judge = launch(
                 "ws_judge",
-                ["bash", str(ROOT / "runtime/ws_judge/judge_sidecar.sh"), "run"],
+                [bash_bin, str(ROOT / "runtime/ws_judge/judge_sidecar.sh"), "run"],
                 judge_env,
             )
             wait_http(f"{services['ws_judge_worker_url']}/health", ws_judge, timeout=180)
@@ -150,7 +160,7 @@ def main() -> None:
                 "--port", env["MASTER_PORT"],
                 "--dashboard-host", "0.0.0.0",
                 "--dashboard-port", env["RAY_DASHBOARD_PORT"],
-                "--num-gpus", "8",
+                "--num-gpus", str(env["NUM_GPUS_PER_NODE"]),
                 "--disable-usage-stats",
                 "--temp-dir", env["RAY_TMPDIR"],
             ],
@@ -159,9 +169,9 @@ def main() -> None:
         wait_http(f"http://{env['MASTER_ADDR']}:{env['RAY_DASHBOARD_PORT']}/api/version", ray_head, timeout=120)
         watched.append(ray_head)
 
-        train = launch("train", ["bash", str(ROOT / "runtime/run_core.sh")], env)
+        train = launch("train", [bash_bin, str(ROOT / "runtime/run_core.sh")], env)
         print(f"Training started ({benchmark} / {services['model_name']}). Logs: {work / 'logs'}", flush=True)
-        print("GPU layout: 4 train + 4 rollout (8 GPUs). Frozen pi_theta_0 & GT judge use configured APIs.", flush=True)
+        print(f"GPU layout: {topo_desc} ({env['NUM_GPUS_PER_NODE']} GPUs). Frozen pi_theta_0 & GT judge use configured APIs.", flush=True)
 
         while train.poll() is None:
             for svc in watched:

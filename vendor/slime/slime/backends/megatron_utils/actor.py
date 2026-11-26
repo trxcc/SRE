@@ -623,6 +623,10 @@ class MegatronTrainRayActor(TrainRayActor):
             dist.barrier()
 
             if dist.get_rank() == 0:
+                if self.role == "actor" and self.args.rollout_global_dataset:
+                    from slime.utils.atomic_rollout_cursor import bundle_cursor
+
+                    bundle_cursor(incomplete, self.args.save or requested, rollout_id)
                 shutil.rmtree(requested, ignore_errors=True)
                 requested.parent.mkdir(parents=True, exist_ok=True)
                 os.replace(incomplete, requested)

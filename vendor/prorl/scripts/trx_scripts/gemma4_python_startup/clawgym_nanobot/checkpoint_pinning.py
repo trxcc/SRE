@@ -64,7 +64,9 @@ PIN_ENV_KEYS = (
 
 
 def require_checkpoint_pin_configuration(args) -> None:
-    """Fail before GPU allocation when the milestone contract was not propagated."""
+    """Fail before GPU allocation when an opt-in milestone contract is incomplete."""
+    if not os.environ.get(PIN_ENV_KEYS[0], "").strip():
+        return
     for key in (*PIN_ENV_KEYS, "CLAWGYM_HF_CHECKPOINT_ROOT"):
         if not os.environ.get(key, "").strip():
             raise ValueError("Missing required checkpoint pin environment: " + key)

@@ -30,6 +30,15 @@ def _zero(mask):
     return all(float(v) == 0.0 for v in mask)
 
 
+def _dataset_schedule(cfg: dict) -> tuple[int, int]:
+    dataset = cfg.get("profile", {}).get("dataset")
+    if dataset == "wsclaw":
+        return 125, 2000
+    if dataset == "researchclaw":
+        return 113, 1800
+    raise ValueError(f"terminal skip unsupported dataset profile: {dataset!r}")
+
+
 def _authority():
     value = os.environ.get("CLAWGYM_SKIP_INTENTIONAL_ZERO_BATCHES", "0")
     _require(value in ("0", "1"), "invalid terminal skip opt-in")
@@ -37,7 +46,7 @@ def _authority():
         return None
     from clawgym_nanobot.self_reward import configuration, configured_group_size
     cfg = configuration()
-    _require(isinstance(cfg, dict) and cfg.get("profile", {}).get("dataset") == "researchclaw", "terminal skip requires ResearchClaw profile")
+    _require(isinstance(cfg, dict) and cfg.get("profile", {}).get("dataset") in {"researchclaw", "wsclaw"}, "terminal skip requires DEAL dataset profile")
     _require(configured_group_size(cfg) in (4, 8), "terminal skip requires four- or eight-candidate SR")
     filename = os.environ.get("CLAWGYM_INTENTIONAL_ZERO_AUTHORITY")
     expected = os.environ.get("CLAWGYM_INTENTIONAL_ZERO_AUTHORITY_SHA")
@@ -80,14 +89,16 @@ def build_receipt(args, samples, rollout_id):
     authority = _authority()
     if authority is None:
         return None
+    from clawgym_nanobot.self_reward import configuration
+    expected_rollouts, total_tasks = _dataset_schedule(configuration())
     _require(not getattr(args, "use_critic", False), "terminal skip is not defined for critic training")
-    _require(args.n_samples_per_prompt == _group_size() and args.rollout_batch_size == 16 and (args.num_rollout == 113 or (getattr(args, "start_rollout_id", None) == 21 and args.num_rollout == 41)), "terminal skip requires sealed finite1800 schedule")
+    _require(args.n_samples_per_prompt == _group_size() and args.rollout_batch_size == 16 and (args.num_rollout == expected_rollouts or (getattr(args, "start_rollout_id", None) == 21 and args.num_rollout == 41)), "terminal skip requires sealed finite schedule")
     if not samples or any(not _zero(s.loss_mask) for s in samples):
         return None
     markers = [(getattr(s, "metadata", None) or {}).get(KEY) for s in samples]
     if any(m is None for m in markers):
         return None
-    begin, end = rollout_id * 16, min(1800, (rollout_id + 1) * 16)
+    begin, end = rollout_id * 16, min(total_tasks, (rollout_id + 1) * 16)
     _require(begin < end, "terminal receipt rollout outside finite pass")
     seen, group_tasks, group_sessions, indices = {}, {}, {}, []
     for sample, marker in zip(samples, markers):
@@ -133,7 +144,9 @@ def validate_transport(args, shards):
     _require(sorted(by_partition) == list(range(receipt["native_samples"])), "terminal transport native sample coverage differs")
     indices = [by_partition[i] for i in range(len(by_partition))]
     _require(_digest(indices) == receipt["sample_indices_SHA"], "terminal transport logical identities changed")
-    expected_groups = list(range(receipt["rollout_id"] * 16, min(1800, (receipt["rollout_id"] + 1) * 16)))
+    from clawgym_nanobot.self_reward import configuration
+    _expected_rollouts, total_tasks = _dataset_schedule(configuration())
+    expected_groups = list(range(receipt["rollout_id"] * 16, min(total_tasks, (receipt["rollout_id"] + 1) * 16)))
     _require(receipt["group_ids"] == expected_groups and receipt["logical_candidates"] == _group_size() * len(expected_groups), "terminal transport batch coverage differs")
     _require(set(indices) == {_group_size() * g + c for g in expected_groups for c in range(_group_size())}, "terminal transport candidates missing")
     return receipt
