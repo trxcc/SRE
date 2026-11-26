@@ -1,0 +1,14 @@
+DEAL & Self-Rewarded Exploration (SRE)
+Copyright 2026 The DEAL & SRE Authors
+
+This product includes software developed by The DEAL & SRE Authors.
+
+Third-Party Components:
+This repository includes vendored source code from upstream open-source projects
+under vendor/ (slime, nanobot, nemo-rl, megatron-bridge). Each third-party
+component retains its original copyright notices and license terms in its
+respective subdirectory:
+  - vendor/slime (https://github.com/THUDM/slime)
+  - vendor/nanobot (https://github.com/HKUDS/nanobot)
+  - vendor/nemo-rl (https://github.com/NVIDIA-NeMo/RL)
+  - vendor/megatron-bridge (https://github.com/NVIDIA/Megatron-LM)

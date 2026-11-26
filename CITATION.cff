@@ -1,0 +1,80 @@
+cff-version: 1.2.0
+message: "If you find DEAL or SRE useful in your research, please cite our paper."
+title: "Agent Learning from Single-Feedback Deployment Experience"
+type: software
+license: Apache-2.0
+repository-code: "https://github.com/trxcc/SRE"
+url: "https://huggingface.co/collections/trxcc2002/sre-deal"
+keywords:
+  - llm-agents
+  - reinforcement-learning
+  - self-rewarded-exploration
+  - deployment-time-learning
+  - continual-learning
+  - benchmark
+authors:
+  - family-names: "Tan"
+    given-names: "Rong-Xi"
+    affiliation: "Nanjing University; Shanghai Artificial Intelligence Laboratory"
+  - family-names: "Li"
+    given-names: "Yizhuo"
+    affiliation: "Shanghai Jiao Tong University; Shanghai Artificial Intelligence Laboratory"
+  - family-names: "Wang"
+    given-names: "Wenjie"
+    affiliation: "Beijing Jiaotong University"
+  - family-names: "Qu"
+    given-names: "Xiaoye"
+    affiliation: "Shanghai Artificial Intelligence Laboratory"
+  - family-names: "Chen"
+    given-names: "Qiwei"
+    affiliation: "Harbin Institute of Technology"
+  - family-names: "Zhu"
+    given-names: "Tong"
+    affiliation: "Shanghai Artificial Intelligence Laboratory"
+  - family-names: "Luo"
+    given-names: "Yun"
+    affiliation: "Shanghai Artificial Intelligence Laboratory"
+  - family-names: "Wang"
+    given-names: "Zhi"
+    affiliation: "Nanjing University"
+  - family-names: "Qian"
+    given-names: "Chao"
+    affiliation: "Nanjing University"
+  - family-names: "Cheng"
+    given-names: "Yu"
+    affiliation: "Nanyang Technological University"
+  - family-names: "Yang"
+    given-names: "Yang"
+    affiliation: "Shanghai Jiao Tong University"
+  - family-names: "Li"
+    given-names: "Yafu"
+    affiliation: "The Chinese University of Hong Kong; Shanghai Artificial Intelligence Laboratory"
+preferred-citation:
+  type: article
+  title: "Agent Learning from Single-Feedback Deployment Experience"
+  year: 2026
+  authors:
+    - family-names: "Tan"
+      given-names: "Rong-Xi"
+    - family-names: "Li"
+      given-names: "Yizhuo"
+    - family-names: "Wang"
+      given-names: "Wenjie"
+    - family-names: "Qu"
+      given-names: "Xiaoye"
+    - family-names: "Chen"
+      given-names: "Qiwei"
+    - family-names: "Zhu"
+      given-names: "Tong"
+    - family-names: "Luo"
+      given-names: "Yun"
+    - family-names: "Wang"
+      given-names: "Zhi"
+    - family-names: "Qian"
+      given-names: "Chao"
+    - family-names: "Cheng"
+      given-names: "Yu"
+    - family-names: "Yang"
+      given-names: "Yang"
+    - family-names: "Li"
+      given-names: "Yafu"
