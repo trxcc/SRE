@@ -25,7 +25,7 @@ python3 -m pip install torch==2.11.0 torchvision==0.26.0 torchaudio==2.11.0 \
 
 # Core training, rollout, dataset, and document-verification dependencies
 python3 -m pip install -c configs/constraints-cu129.txt -r configs/requirements-python.txt
-python3 -m pip install pyarrow huggingface_hub python-docx openpyxl python-pptx pypdf pyreadstat xlrd pyyaml
+python3 -m pip install pyarrow huggingface_hub python-docx openpyxl python-pptx pypdf pyreadstat xlrd pyyaml pandas reportlab
 
 # Build TransformerEngine and FlashAttention against the installed PyTorch/CUDA
 python3 -m pip install --no-build-isolation -c configs/constraints-cu129.txt \

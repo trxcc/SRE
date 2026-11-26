@@ -342,9 +342,71 @@ def probe_openai_endpoint(report: Report, label: str, base_url: str, model: str 
         report.add(f"endpoint:{label}", "FAIL", f"Failed to reach {url}/models: {type(exc).__name__}: {exc}")
 
 
+def check_user_config(report: Report, config_path: Path) -> dict[str, str] | None:
+    try:
+        import shlex
+        from configure_run import BENCHMARK_SPEC, configure, read_env
+
+        resolved = config_path.expanduser().resolve()
+        if not resolved.is_file():
+            report.add("user_config", "FAIL", f"Config file does not exist: {resolved}")
+            return None
+        cfg = read_env(resolved)
+        required_keys = [
+            "BENCHMARK",
+            "MODEL",
+            "BASE_MODEL",
+            "DATA_DIR",
+            "RUN_DIR",
+            "TRAIN_GPUS",
+            "ROLLOUT_GPUS",
+            "SELF_REWARD_BASE_URL",
+            "SELF_REWARD_MODEL",
+            "SELF_REWARD_API_KEY_FILE",
+            "GT_BASE_URL",
+            "GT_MODEL",
+            "GT_API_KEY_FILE",
+        ]
+        missing_keys = [k for k in required_keys if not cfg.get(k, "").strip()]
+        if missing_keys:
+            report.add("user_config", "FAIL", f"Missing required keys in {resolved.name}: {missing_keys}")
+            return None
+        benchmark = cfg["BENCHMARK"].strip().lower()
+        model = cfg["MODEL"].strip()
+        if benchmark not in BENCHMARK_SPEC or model not in BENCHMARK_SPEC[benchmark]["recipes"]:
+            report.add("user_config", "FAIL", f"Unsupported BENCHMARK={benchmark!r} / MODEL={model!r}")
+            return None
+
+        base_dir = Path(cfg["BASE_MODEL"]).expanduser()
+        data_dir = Path(cfg["DATA_DIR"]).expanduser()
+        if (base_dir / "config.json").is_file() and (data_dir / "DATA_READY.json").is_file():
+            with tempfile.TemporaryDirectory(prefix="deal-user-cfg-verify-") as tmp:
+                tmp_path = Path(tmp)
+                shadow_cfg = tmp_path / "verify.env"
+                lines = [
+                    f"{k}={shlex.quote(str(tmp_path / 'runs' if k == 'RUN_DIR' else v))}"
+                    for k, v in cfg.items()
+                ]
+                shadow_cfg.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                configure(shadow_cfg, attempt="verify")
+            report.add("user_config", "PASS", f"Validated {resolved.name} ({benchmark} / {model}) with local model & data")
+        else:
+            report.add(
+                "user_config",
+                "WARN",
+                f"Parsed {resolved.name} ({benchmark} / {model}); BASE_MODEL or DATA_DIR not materialized yet",
+            )
+        return cfg
+    except Exception as exc:
+        report.add("user_config", "FAIL", f"{type(exc).__name__}: {exc}")
+        return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--mode", choices=["cpu", "gpu", "all"], default="cpu")
+    ap.add_argument("--config", type=Path, help="Optional .local.env file to validate")
+    ap.add_argument("--probe-endpoints", action="store_true", help="Probe SELF_REWARD_BASE_URL and GT_BASE_URL from --config")
     ap.add_argument("--self-reward-url", default="", help="Optional SELF_REWARD_BASE_URL to probe")
     ap.add_argument("--self-reward-model", default="", help="Optional expected self-reward model name")
     ap.add_argument("--self-reward-key-file", type=Path, help="Optional self-reward API key file")
@@ -367,10 +429,30 @@ def main() -> int:
     if args.mode in ("gpu", "all"):
         check_gpu_and_ml_stack(report)
 
-    if args.self_reward_url:
-        probe_openai_endpoint(report, "self_reward", args.self_reward_url, args.self_reward_model or None, args.self_reward_key_file)
-    if args.gt_url:
-        probe_openai_endpoint(report, "gt_judge", args.gt_url, args.gt_model or None, args.gt_key_file)
+    loaded_cfg: dict[str, str] | None = None
+    if args.config is not None:
+        loaded_cfg = check_user_config(report, args.config)
+
+    sr_url = args.self_reward_url
+    sr_model = args.self_reward_model
+    sr_key = args.self_reward_key_file
+    gt_url = args.gt_url
+    gt_model = args.gt_model
+    gt_key = args.gt_key_file
+    if args.probe_endpoints and loaded_cfg is not None:
+        sr_url = sr_url or loaded_cfg.get("SELF_REWARD_BASE_URL", "")
+        sr_model = sr_model or loaded_cfg.get("SELF_REWARD_MODEL", "")
+        if sr_key is None and loaded_cfg.get("SELF_REWARD_API_KEY_FILE"):
+            sr_key = Path(loaded_cfg["SELF_REWARD_API_KEY_FILE"])
+        gt_url = gt_url or loaded_cfg.get("GT_BASE_URL", "")
+        gt_model = gt_model or loaded_cfg.get("GT_MODEL", "")
+        if gt_key is None and loaded_cfg.get("GT_API_KEY_FILE"):
+            gt_key = Path(loaded_cfg["GT_API_KEY_FILE"])
+
+    if sr_url:
+        probe_openai_endpoint(report, "self_reward", sr_url, sr_model or None, sr_key)
+    if gt_url:
+        probe_openai_endpoint(report, "gt_judge", gt_url, gt_model or None, gt_key)
 
     if args.json:
         print(json.dumps({"ok": report.ok, "checks": report.checks}, indent=2))

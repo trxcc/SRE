@@ -14,6 +14,8 @@ import types
 import unittest
 from pathlib import Path
 
+from typing import Any
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [
     str(ROOT),
@@ -25,6 +27,24 @@ sys.path[:0] = [
 from configure_run import BENCHMARK_SPEC, configure, validate_cursor
 from runtime.aligned_eval_recovery import apply_failure_zero
 from runtime.portable_contract import validate_recovery_args
+
+
+class _StubFileStates:
+    def record_write(self, _fp: Path) -> None:
+        pass
+
+
+class _StubWriteTool:
+    def __init__(self, root: Path, execute_fn: Any) -> None:
+        self._root = root
+        self._file_states = _StubFileStates()
+        self._execute_fn = execute_fn
+
+    def _resolve_write(self, rel: str) -> Path:
+        return self._root / rel
+
+    async def execute(self, path: str | None = None, content: str | None = None, **kwargs: Any) -> str:
+        return await self._execute_fn(self, path=path, content=content, **kwargs)
 
 
 def _mock_args_from_env(env: dict[str, str], manifest: dict) -> types.SimpleNamespace:
@@ -393,23 +413,8 @@ class DealReleaseTests(unittest.TestCase):
             exec(compile(mod, str(fs_path), "exec"), ns)
             execute_fn = ns["execute"]
 
-            class _StubFileStates:
-                def record_write(self, _fp: Path) -> None:
-                    pass
-
-            class _StubWriteTool:
-                def __init__(self, root: Path):
-                    self._root = root
-                    self._file_states = _StubFileStates()
-
-                def _resolve_write(self, rel: str) -> Path:
-                    return self._root / rel
-
-                async def execute(self, path=None, content=None, **kwargs):
-                    return await execute_fn(self, path=path, content=content, **kwargs)
-
             def make_tool(root: Path):
-                return _StubWriteTool(root)
+                return _StubWriteTool(root, execute_fn)
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -550,6 +555,37 @@ class DealReleaseTests(unittest.TestCase):
         self.assertFalse(supports_temp("openai/gpt-5-mini", "low"))
         self.assertFalse(supports_temp("o3", "high"))
         self.assertFalse(supports_temp("openai/o4-mini", "medium"))
+
+    def test_verify_env_accepts_config_and_probe_flags(self) -> None:
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts/verify_env.py"),
+                "--mode",
+                "cpu",
+                "--config",
+                str(ROOT / "configs/deal-ws.env.example"),
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        payload = json.loads(proc.stdout)
+        self.assertTrue(payload["ok"], payload)
+        names = {row["name"]: row["status"] for row in payload["checks"]}
+        self.assertIn("user_config", names)
+        self.assertIn(names["user_config"], {"PASS", "WARN"})
+
+    def test_serve_frozen_model_help(self) -> None:
+        proc = subprocess.run(
+            ["bash", str(ROOT / "scripts/serve_frozen_model.sh"), "--help"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertIn("--model-path PATH", proc.stdout)
+        self.assertIn("--model-family FAMILY", proc.stdout)
 
 
 if __name__ == "__main__":

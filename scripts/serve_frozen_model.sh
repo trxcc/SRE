@@ -20,8 +20,28 @@ MEM_FRACTION="0.80"
 MAX_RUNNING_REQUESTS="32"
 API_KEY_FILE=""
 
+usage() {
+  cat <<'EOF'
+Usage: bash scripts/serve_frozen_model.sh --model-path PATH [options]
+
+Options:
+  --model-path PATH            Local HF directory or Hub model ID (required)
+  --model-family FAMILY        gemma4 | qwen35 (default: gemma4)
+  --served-model-name NAME     OpenAI model ID (default: gemma4-e4b-it / gemma-4-31B-it / qwen3.5-9b)
+  --host HOST                  Bind host (default: 0.0.0.0)
+  --port PORT                  Bind port (default: 29040)
+  --tp N                       Tensor parallel size (default: 1; use 2 for Gemma4-31B-IT)
+  --context-length TOKENS      Max context length (default: 99328)
+  --mem-fraction-static FRAC   SGLang static KV memory fraction (default: 0.80)
+  --max-running-requests N     Max concurrent requests (default: 32)
+  --api-key-file FILE          Optional chmod-600 API key file
+  -h, --help                   Show this help message and exit
+EOF
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    -h|--help) usage; exit 0 ;;
     --model-path) MODEL_PATH="$2"; shift 2 ;;
     --model-family) MODEL_FAMILY="$2"; shift 2 ;;
     --served-model-name) SERVED_NAME="$2"; shift 2 ;;
@@ -32,16 +52,22 @@ while [[ $# -gt 0 ]]; do
     --mem-fraction-static) MEM_FRACTION="$2"; shift 2 ;;
     --max-running-requests) MAX_RUNNING_REQUESTS="$2"; shift 2 ;;
     --api-key-file) API_KEY_FILE="$2"; shift 2 ;;
-    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
-[[ -n "${MODEL_PATH}" ]] || { echo "ERROR: --model-path is required" >&2; exit 2; }
+[[ -n "${MODEL_PATH}" ]] || { echo "ERROR: --model-path is required" >&2; usage >&2; exit 2; }
 
 EXTRA_ARGS=()
 case "${MODEL_FAMILY}" in
   gemma4)
-    SERVED_NAME="${SERVED_NAME:-gemma4-e4b-it}"
+    if [[ -z "${SERVED_NAME}" ]]; then
+      if [[ "${MODEL_PATH}" == *31[bB]* ]]; then
+        SERVED_NAME="gemma-4-31B-it"
+      else
+        SERVED_NAME="gemma4-e4b-it"
+      fi
+    fi
     EXTRA_ARGS+=(--attention-backend triton --reasoning-parser gemma4 --tool-call-parser gemma4 --disable-cuda-graph)
     ;;
   qwen35)

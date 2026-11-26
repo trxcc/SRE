@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Materialize and verify self-contained SRE workspace demos for DEAL-WS and DEAL-RS.
 
-Each benchmark includes all four agent roles in the Self-Rewarding Evolution loop:
+Each benchmark includes all four agent roles in the Self-Rewarded Exploration loop:
   1. 01_exec_agent        - Solver executing in the nanobot workspace
   2. 02_gt_judge_agent    - External GT judge / user simulator (anchor feedback F_t)
   3. 03_self_rubric_agent - Frozen pi_0 generating shared rubric Q_t from anchor + F_t
@@ -826,7 +826,7 @@ def materialize_readme(root: Path) -> None:
         """# SRE Workspace Demos (DEAL-WS & DEAL-RS)
 
 Self-contained, synthetic workspace layouts illustrating all **four agent roles** in the
-Self-Rewarding Evolution (SRE) loop (`1 GT anchor + 7 SR` offline candidates):
+Self-Rewarded Exploration (SRE) loop (`1 GT anchor + 7 SR` offline candidates):
 
 1. `01_exec_agent/` — Solver executing in the nanobot workspace (`π_θ`).
 2. `02_gt_judge_agent/` — External GT judge / user simulator evaluating the single anchor rollout to produce `F_t = (u_t, c_t)`.

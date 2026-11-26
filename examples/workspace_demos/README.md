@@ -1,7 +1,7 @@
 # SRE Workspace Demos (DEAL-WS & DEAL-RS)
 
 Self-contained, synthetic workspace layouts illustrating all **four agent roles** in the
-Self-Rewarding Evolution (SRE) loop (`1 GT anchor + 7 SR` offline candidates):
+Self-Rewarded Exploration (SRE) loop (`1 GT anchor + 7 SR` offline candidates):
 
 1. `01_exec_agent/` — Solver executing in the nanobot workspace (`π_θ`).
 2. `02_gt_judge_agent/` — External GT judge / user simulator evaluating the single anchor rollout to produce `F_t = (u_t, c_t)`.

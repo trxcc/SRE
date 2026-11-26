@@ -117,7 +117,7 @@ def _prepare_deal_rs(hf_dir: Path, out_dir: Path) -> dict:
                     "source": "researchclaw",
                     "family_id": row.get("family_id") or row.get("family") or "",
                     "paper_ids": row.get("paper_ids") or [],
-                    "repo_ids": row.get("repo_ids") or [],
+                    "repo_ids": row.get("repo_ids") or row.get("repository_ids") or [],
                     "ordinal": idx,
                 }
                 entry = {
