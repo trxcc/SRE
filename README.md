@@ -54,10 +54,6 @@ In real-world deployment, user assistants face a **single-feedback constraint**:
 - **DEAL (*Deployment-time Evaluation of Agent Learning*)**: An executable testbed covering **Workplace Assistance (`DEAL-WS`, 2,000 online / 200 test)** and **AI Research (`DEAL-RS`, 1,800 online / 200 test)**, where agents interact with grounded files and tools through the `nanobot` harness across related task streams.
 - **Self-Rewarded Exploration (SRE)**: Single-rollout RL suffers from an *exploration bottleneck* when only one trajectory is evaluated per task. After live execution, SRE asynchronously expands $K = 7$ additional rollouts in isolated copies of the initial task snapshot, uses the frozen initial model $\pi_{\theta_0}$ to build a feedback-anchored rubric $\mathcal{Q}_t$ from $(x_t, \tau_t, F_t)$ and score internal candidates without exposing $F_t$, and applies GRPO updates over the internal self-rewarded rollouts.
 
-<p align="center">
-  <img src="./assets/deal_pipeline.png" alt="DEAL Grounded Task Synthesis and Iterative Quality Refinement Pipeline" width="94%" />
-</p>
-
 ---
 
 <a id="models-and-datasets"></a>
