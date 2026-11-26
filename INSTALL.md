@@ -3,10 +3,7 @@
 ## Requirements
 
 - **OS / Arch**: Linux x86_64 (Ubuntu 24.04 recommended)
-- **Hardware (Training)**: 8× NVIDIA H200 (or 8× H100 80GB+ with adjusted `ROLLOUT_MAX_RUNNING_REQUESTS`), ≥ 512 GiB CPU RAM
-  - GPUs `0–3`: Actor training (`TP=4`)
-  - GPUs `4–7`: 4× SGLang rollout engines (`TP=1` each)
-  - Separate GPU/host (or OpenAI-compatible API): Frozen self-reward model ($\pi_{\theta_0}$) and external GT user simulator (`google/gemma-4-31B-it` in the paper)
+- **Hardware (Training)**: Default single-node recipes in `configs/*.recipe.json` use 8× NVIDIA H200 / H100 GPUs (≥ 80GB VRAM, ≥ 512 GiB CPU RAM), e.g., `TRAIN_GPUS=0,1,2,3` (`TP=4`) + `ROLLOUT_GPUS=4,5,6,7` (`4×TP=1` SGLang rollout engines), with the frozen self-reward model ($\pi_{\theta_0}$) and external GT user simulator (`google/gemma-4-31B-it` in the paper) served on separate GPU(s) or OpenAI-compatible APIs. GPU allocation and engine counts can also be customized in your config/recipes for other hardware setups.
 - **Hardware (Standalone Held-out Evaluation)**:
   - 1× GPU (≥ 40GB VRAM, e.g., A100/H100/H200) to serve the student checkpoint (`DEAL-*-Gemma` or `DEAL-*-Qwen`, `TP=1`)
   - 2× GPUs (`TP=2`) or an external OpenAI-compatible endpoint to serve the `google/gemma-4-31B-it` GT judge

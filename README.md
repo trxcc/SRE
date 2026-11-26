@@ -11,46 +11,26 @@
 </p>
 
 <p align="center">
-  <!-- Uncomment and fill in ARXIV_ID once the arXiv paper page goes live:
-  <a href="https://arxiv.org/abs/ARXIV_ID">
-    <img alt="arXiv" src="https://img.shields.io/badge/arXiv-Paper-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" />
-  </a>
-  -->
-  <a href="https://github.com/trxcc/SRE">
-    <img alt="GitHub" src="https://img.shields.io/badge/GitHub-SRE-181717?style=for-the-badge&logo=github&logoColor=white" />
-  </a>
-  <a href="https://huggingface.co/collections/trxcc2002/sre-deal">
-    <img alt="HF Collection" src="https://img.shields.io/badge/HF_Collection-SRE--DEAL-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
-  </a>
-  <a href="https://huggingface.co/datasets/trxcc2002/DEAL-WS">
-    <img alt="DEAL-WS Dataset" src="https://img.shields.io/badge/Dataset-DEAL--WS-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
-  </a>
-  <a href="https://huggingface.co/datasets/trxcc2002/DEAL-RS">
-    <img alt="DEAL-RS Dataset" src="https://img.shields.io/badge/Dataset-DEAL--RS-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
-  </a>
-  <a href="https://github.com/trxcc/SRE/actions/workflows/ci.yml">
-    <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/trxcc/SRE/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI" />
-  </a>
-  <a href="./LICENSE">
-    <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-2EA44F?style=for-the-badge" />
-  </a>
+  <!-- Uncomment and add assets/badges/arxiv.svg once the arXiv paper page goes live -->
+  <a href="https://github.com/trxcc/SRE"><img alt="GitHub" src="./assets/badges/github-sre.svg" /></a>
+  <a href="https://huggingface.co/collections/trxcc2002/sre-deal"><img alt="HF Collection" src="./assets/badges/hf-collection.svg" /></a>
+  <a href="https://huggingface.co/datasets/trxcc2002/DEAL-WS"><img alt="DEAL-WS Dataset" src="./assets/badges/dataset-deal-ws.svg" /></a>
+  <a href="https://huggingface.co/datasets/trxcc2002/DEAL-RS"><img alt="DEAL-RS Dataset" src="./assets/badges/dataset-deal-rs.svg" /></a>
+  <a href="https://github.com/trxcc/SRE/actions/workflows/ci.yml"><img alt="CI" src="./assets/badges/ci-passing.svg" /></a>
+  <a href="./LICENSE"><img alt="License" src="./assets/badges/license-apache2.svg" /></a>
 </p>
 
 <p align="center">
   <a href="#news">📢 News</a> •
   <a href="#introduction">📖 Introduction</a> •
-  <a href="#key-highlights">🏆 Key Highlights</a> •
-  <a href="#models-and-datasets">🤗 Models &amp; Datasets</a>
+  <a href="#models-and-datasets">🤗 Models &amp; Datasets</a> •
+  <a href="#results">📊 Main Results</a>
 </p>
 <p align="center">
-  <a href="#results">📊 Main Results</a> •
   <a href="#getting-started">🚀 Getting Started</a> •
   <a href="#evaluation">🧪 Evaluation</a> •
   <a href="#training">🔧 Training</a> •
-  <a href="#workspace-demos">🗂️ Workspace Demos</a>
-</p>
-<p align="center">
-  <a href="#repository-structure">📦 Repo Structure</a> •
+  <a href="#workspace-demos">🗂️ Workspace Demos</a> •
   <a href="#acknowledgement">✨ Acknowledgement</a> •
   <a href="#citation">📝 Citation</a>
 </p>
@@ -62,36 +42,21 @@
 <a id="news"></a>
 ## 📢 News
 
-- **[2026/11]** 🎉 We release the official training & evaluation codebase, both benchmark task streams ([`DEAL-WS`](https://huggingface.co/datasets/trxcc2002/DEAL-WS) & [`DEAL-RS`](https://huggingface.co/datasets/trxcc2002/DEAL-RS)), and four trained SRE checkpoints across **Gemma4-E4B-IT** and **Qwen3.5-9B** in our [Hugging Face SRE-DEAL Collection](https://huggingface.co/collections/trxcc2002/sre-deal)!
+- **[2026/11]** 🎉 We release the official training &amp; evaluation codebase, both benchmark task streams ([`DEAL-WS`](https://huggingface.co/datasets/trxcc2002/DEAL-WS) &amp; [`DEAL-RS`](https://huggingface.co/datasets/trxcc2002/DEAL-RS)), and four trained SRE checkpoints across **Gemma4-E4B-IT** and **Qwen3.5-9B** in our [Hugging Face SRE-DEAL Collection](https://huggingface.co/collections/trxcc2002/sre-deal)!
 
 ---
 
 <a id="introduction"></a>
 ## 📖 Introduction
 
-Deploying compact, self-hosted LLM agents as everyday user assistants raises a natural question: **how can a deployed assistant continuously improve from its own serving experience?** Unlike pre-deployment gym training—where an agent can repeatedly re-attempt the same task and query an oracle verifier—real-world deployment imposes a **single-feedback constraint**: tasks arrive sequentially along the user's workflow, and the user evaluates only the single delivered outcome $F_t = (u_t, c_t)$ before moving on.
+In real-world deployment, user assistants face a **single-feedback constraint**: tasks arrive sequentially, and the user evaluates only one delivered outcome $F_t = (u_t, c_t)$ per task before moving on.
 
-To systematically study this setting, we introduce:
-
-1. **DEAL (*Deployment-time Evaluation of Agent Learning*)**: An executable testbed spanning two realistic assistant domains—**Workplace Assistance (`DEAL-WS`, 2,000 online / 200 held-out tasks)** and **AI Research (`DEAL-RS`, 1,800 online / 200 held-out tasks)**—where agents operate through a native file-and-tool harness (`nanobot`) over grounded workspaces and shared cross-task structure.
-2. **Self-Rewarded Exploration (SRE)**: While parameter-based RL internalizes deployment experience more effectively than frozen memory/skill evolution on small models, single-rollout RL suffers from an **exploration bottleneck**: one evaluated trajectory often reveals *what went wrong* without exposing *better behaviors*. SRE overcomes this bottleneck without requesting any extra user evaluations:
-   - **Offline Rollout Expansion**: After live delivery, SRE restores isolated copies of the saved task snapshot $s_t$ and samples $K = 7$ additional candidate trajectories asynchronously in free time (without leaking $F_t$ to the actor).
-   - **Feedback-Anchored Self-Rewarding**: Using the **frozen initial policy** $\pi_{\theta_0}$ to prevent reward drift, a *self-rubric agent* synthesizes a shared task rubric $\mathcal{Q}_t$ anchored on the live trajectory and feedback $F_t$, and an isolated *self-scoring agent* grades each offline rollout against $\mathcal{Q}_t$ across 3 independent sessions (median valid score, without observing $F_t$).
-   - **Internal-Only GRPO Update**: Group-relative advantages are computed strictly over the $K = 7$ self-rewarded internal candidates, avoiding scale/distribution distortion between external user scores and internal self-rewards.
+- **DEAL (*Deployment-time Evaluation of Agent Learning*)**: An executable testbed covering **Workplace Assistance (`DEAL-WS`, 2,000 online / 200 test)** and **AI Research (`DEAL-RS`, 1,800 online / 200 test)**, where agents interact with grounded files and tools through the `nanobot` harness across related task streams.
+- **Self-Rewarded Exploration (SRE)**: Single-rollout RL suffers from an *exploration bottleneck* when only one trajectory is evaluated per task. After live execution, SRE asynchronously expands $K = 7$ additional rollouts in isolated copies of the initial task snapshot, uses the frozen initial model $\pi_{\theta_0}$ to build a feedback-anchored rubric $\mathcal{Q}_t$ from $(x_t, \tau_t, F_t)$ and score internal candidates without exposing $F_t$, and applies GRPO updates over the internal self-rewarded rollouts.
 
 <p align="center">
   <img src="./assets/deal_pipeline.png" alt="DEAL Grounded Task Synthesis and Iterative Quality Refinement Pipeline" width="94%" />
 </p>
-
----
-
-<a id="key-highlights"></a>
-## 🏆 Key Highlights
-
-- **Realistic Single-Feedback Agent Testbed (`DEAL-WS` & `DEAL-RS`)**: Multi-step file, spreadsheet/document, and code-execution workflows with strict solver-vs-evaluator separation and deterministic deliverable format hardgates (`CLAWGYM_ARTIFACT_VALIDITY_GATE=1`).
-- **Breaking the Single-Rollout Exploration Bottleneck**: Theoretical bandit and group-centered gradient analyses characterize when rollout expansion ($K=7$) outweighs self-reward selection noise, validated empirically across rollout budgets, anchor ablations, and noisy/sparse user feedback.
-- **Consistent Gains Across Model Families & OOD Benchmarks**: Across both **Gemma4-E4B-IT** and **Qwen3.5-9B**, SRE outperforms memory/skill adaptation (`CASCADE`, `EvoSkill`), single-rollout RL (`REINFORCE++`, including compute-matched $2\times$ updates), and feedback-conditioned self-distillation (`SDPO`) on online utility, held-out ID tasks, and unseen OOD benchmarks (`AARRI-Bench`, `PinchBench`, `ClawGym-Bench`), while preserving general reasoning and coding capabilities.
-- **Unified Single-Node `4 Train + 4 Rollout` Stack**: Clean end-to-end training & evaluation recipes built on `slime`, `Polar`, `NeMo-Megatron`, `SGLang`, and `nanobot`, with resumable committed dataset cursors and standalone 200-task evaluators.
 
 ---
 
@@ -104,17 +69,17 @@ All public artifacts are organized in the [**SRE-DEAL Hugging Face Collection**]
 
 | Dataset | Domain | Online Stream | Held-out Test | Context / Max Output | Hugging Face | Workspace Materialization |
 |---|---|---:|---:|---|---|---|
-| **DEAL-WS** | Workplace Assistance (5 personas: Ops, Logistics, Research, Dev, Product) | 2,000 | 200 | 64K / 8K | [`trxcc2002/DEAL-WS`](https://huggingface.co/datasets/trxcc2002/DEAL-WS) | Task overlays bundled + upstream `filesys_en.zip` from [`Workspace-Bench`](https://huggingface.co/datasets/Workspace-Bench/Workspace-Bench-Workspaces) |
-| **DEAL-RS** | AI Research (5 families: Comp., Align., Verify., Workflow, Audit) | 1,800 | 200 | 72K / 16K (eval: 80K / 16K) | [`trxcc2002/DEAL-RS`](https://huggingface.co/datasets/trxcc2002/DEAL-RS) | Self-contained paper &amp; repo snapshots in `assets/workspaces-*.zip` |
+| **DEAL-WS** | Workplace Assistance (Ops, Logistics, Research, Dev, Product) | 2,000 | 200 | 64K / 8K | [`trxcc2002/DEAL-WS`](https://huggingface.co/datasets/trxcc2002/DEAL-WS) | Task overlays bundled + upstream `filesys_en.zip` from [`Workspace-Bench`](https://huggingface.co/datasets/Workspace-Bench/Workspace-Bench-Workspaces) |
+| **DEAL-RS** | AI Research (Comp., Align., Verify., Workflow, Audit) | 1,800 | 200 | 72K / 16K (eval: 80K / 16K) | [`trxcc2002/DEAL-RS`](https://huggingface.co/datasets/trxcc2002/DEAL-RS) | Self-contained paper &amp; repo snapshots in `assets/workspaces-*.zip` |
 
-### Released SRE Checkpoints
+### Released Checkpoints (Last Checkpoints)
 
-| Model | Base Backbone | Domain | Step | Held-out ID | OOD Benchmark(s) | Hugging Face |
-|---|---|---|---:|---:|---|---|
-| **DEAL-RS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | AI Research (`DEAL-RS`) | 112 | **41.22** *(Base: 21.30)* | AARRI-Bench: **38.60** | [`trxcc2002/DEAL-RS-Gemma`](https://huggingface.co/trxcc2002/DEAL-RS-Gemma) |
-| **DEAL-WS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | Workplace (`DEAL-WS`) | 124 | **46.81** *(Base: 40.24)* | PinchBench: **59.54** / ClawGym: **50.27** | [`trxcc2002/DEAL-WS-Gemma`](https://huggingface.co/trxcc2002/DEAL-WS-Gemma) |
-| **DEAL-RS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | AI Research (`DEAL-RS`) | 112 | **60.56** *(Base: 56.04)* | AARRI-Bench: **48.31** | [`trxcc2002/DEAL-RS-Qwen`](https://huggingface.co/trxcc2002/DEAL-RS-Qwen) |
-| **DEAL-WS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | Workplace (`DEAL-WS`) | 124 | **68.50** *(Base: 57.74)* | PinchBench: **85.82** / ClawGym: **63.12** | [`trxcc2002/DEAL-WS-Qwen`](https://huggingface.co/trxcc2002/DEAL-WS-Qwen) |
+| Model | Base Backbone | Domain | Held-out ID | OOD Benchmark(s) | Hugging Face |
+|---|---|---|---:|---|---|
+| **DEAL-RS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | AI Research (`DEAL-RS`) | **41.22** *(Base: 21.30)* | AARRI-Bench: **38.60** | [`trxcc2002/DEAL-RS-Gemma`](https://huggingface.co/trxcc2002/DEAL-RS-Gemma) |
+| **DEAL-WS-Gemma** | [`google/gemma-4-E4B-it`](https://huggingface.co/google/gemma-4-E4B-it) | Workplace (`DEAL-WS`) | **46.81** *(Base: 40.24)* | PinchBench: **59.54** / ClawGym: **50.27** | [`trxcc2002/DEAL-WS-Gemma`](https://huggingface.co/trxcc2002/DEAL-WS-Gemma) |
+| **DEAL-RS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | AI Research (`DEAL-RS`) | **60.56** *(Base: 56.04)* | AARRI-Bench: **48.31** | [`trxcc2002/DEAL-RS-Qwen`](https://huggingface.co/trxcc2002/DEAL-RS-Qwen) |
+| **DEAL-WS-Qwen** | [`Qwen/Qwen3.5-9B`](https://huggingface.co/Qwen/Qwen3.5-9B) | Workplace (`DEAL-WS`) | **68.50** *(Base: 57.74)* | PinchBench: **85.82** / ClawGym: **63.12** | [`trxcc2002/DEAL-WS-Qwen`](https://huggingface.co/trxcc2002/DEAL-WS-Qwen) |
 
 ---
 
@@ -168,7 +133,7 @@ All public artifacts are organized in the [**SRE-DEAL Hugging Face Collection**]
 
 ### 1. Environment Installation
 
-See [**INSTALL.md**](INSTALL.md) for system prerequisites (Linux `x86_64`, Python `3.12`, CUDA `12.9` devel, `claude` CLI on `PATH` for the `DEAL-WS` native judge sidecar) and optional Docker setup.
+See [**INSTALL.md**](INSTALL.md) for system prerequisites (Linux `x86_64`, Python `3.12`, CUDA `12.9` devel, and `claude` CLI on `PATH` for the `DEAL-WS` native judge sidecar) and optional Docker setup.
 
 ```bash
 git clone https://github.com/trxcc/SRE.git
@@ -176,13 +141,11 @@ cd SRE
 
 bash scripts/install.sh
 python3 scripts/verify_env.py --mode cpu   # Safe on CPU-only hosts / CI
-python3 scripts/verify_env.py --mode all   # Full check on an 8-GPU training node
+python3 scripts/verify_env.py --mode all   # Full check on GPU host
 python3 scripts/doctor.py --imports
 ```
 
 ### 2. Materialize Benchmark Data (`DEAL-RS` &amp; `DEAL-WS`)
-
-`scripts/prepare_data.py` downloads and unpacks the public Hugging Face datasets into the on-disk task directory layout expected by both the evaluators and training launchers:
 
 ```bash
 # Materialize DEAL-RS (1,800 train / 200 held-out eval tasks)
@@ -205,7 +168,7 @@ python3 scripts/prepare_data.py \
 <a id="evaluation"></a>
 ## 🧪 Evaluation (Reproducing Held-out 200-Task Scores)
 
-Both evaluators (`scripts/eval_deal_rs.py` and `scripts/eval_deal_ws.py`) execute the held-out 200-task test split through the native `nanobot` harness, score failed or timed-out tasks as `0.0`, and retain all 200 tasks in the denominator (`summary.json`).
+`scripts/eval_deal_rs.py` and `scripts/eval_deal_ws.py` evaluate any OpenAI-compatible student endpoint on the 200 held-out test tasks through the native `nanobot` harness, scoring failed or timed-out tasks as `0.0` over the full 200-task denominator (`summary.json`).
 
 ### Step 1: Download &amp; Serve a Checkpoint + GT Judge
 
@@ -227,7 +190,7 @@ CUDA_VISIBLE_DEVICES=0 bash scripts/serve_frozen_model.sh \
   --port 8000
 ```
 
-Prepare a `chmod 600` API key file for your external GT judge endpoint (`google/gemma-4-31B-it` in the paper; you can also self-host it locally on 2 GPUs with `scripts/serve_frozen_model.sh --model-path /path/to/gemma-4-31B-it --model-family gemma4 --tp 2 --port 29050`):
+Prepare a `chmod 600` API key file for your GT judge endpoint (`google/gemma-4-31B-it` in the paper; can also be self-hosted via `scripts/serve_frozen_model.sh --model-path /path/to/gemma-4-31B-it --model-family gemma4 --tp 2 --port 29050`):
 
 ```bash
 mkdir -p ./secrets && chmod 700 ./secrets
@@ -237,12 +200,12 @@ chmod 600 ./secrets/gt-api-key
 
 ### Step 2: Run Standalone Evaluation
 
-> **Important for Qwen3.5-9B Checkpoints**: Always pass `--model-family qwen35 --student-model qwen3.5-9b` when evaluating `DEAL-RS-Qwen` or `DEAL-WS-Qwen` so tool-call schemas and per-task timeouts (`1800s`) match the Qwen3.5 runtime contract.
+> **Note for Qwen3.5-9B Checkpoints**: Pass `--model-family qwen35 --student-model qwen3.5-9b` when evaluating `DEAL-RS-Qwen` or `DEAL-WS-Qwen` so Qwen3.5 tool schemas and per-task timeouts (`1800s`) are applied.
 
 #### Evaluate on `DEAL-RS` (200 tasks)
 
 ```bash
-# Gemma4-E4B-IT (DEAL-RS-Gemma -> expected ~41.22)
+# Gemma4-E4B-IT (DEAL-RS-Gemma)
 python3 scripts/eval_deal_rs.py \
   --data-dir ./data/deal-rs \
   --output-dir ./eval-runs/deal-rs-gemma \
@@ -253,7 +216,7 @@ python3 scripts/eval_deal_rs.py \
   --judge-model gemma-4-31B-it \
   --judge-api-key-file ./secrets/gt-api-key
 
-# Qwen3.5-9B (DEAL-RS-Qwen -> expected ~60.56)
+# Qwen3.5-9B (DEAL-RS-Qwen)
 python3 scripts/eval_deal_rs.py \
   --data-dir ./data/deal-rs \
   --output-dir ./eval-runs/deal-rs-qwen \
@@ -268,7 +231,7 @@ python3 scripts/eval_deal_rs.py \
 #### Evaluate on `DEAL-WS` (200 tasks, with Deliverable Hardgate)
 
 ```bash
-# Gemma4-E4B-IT (DEAL-WS-Gemma -> expected ~46.81)
+# Gemma4-E4B-IT (DEAL-WS-Gemma)
 python3 scripts/eval_deal_ws.py \
   --data-dir ./data/deal-ws \
   --output-dir ./eval-runs/deal-ws-gemma \
@@ -279,7 +242,7 @@ python3 scripts/eval_deal_ws.py \
   --judge-model gemma-4-31B-it \
   --judge-api-key-file ./secrets/gt-api-key
 
-# Qwen3.5-9B (DEAL-WS-Qwen -> expected ~68.50)
+# Qwen3.5-9B (DEAL-WS-Qwen)
 python3 scripts/eval_deal_ws.py \
   --data-dir ./data/deal-ws \
   --output-dir ./eval-runs/deal-ws-qwen \
@@ -291,30 +254,27 @@ python3 scripts/eval_deal_ws.py \
   --judge-api-key-file ./secrets/gt-api-key
 ```
 
-Per-task JSON records are saved atomically under `<output-dir>/results/*.json`, live progress is tracked in `<output-dir>/progress.json`, and final aggregate + per-category / per-persona scores are written to `<output-dir>/summary.json`. Pass `--max-tasks 4` for a quick end-to-end smoke check.
-
 ---
 
 <a id="training"></a>
-## 🔧 Training (Unified `4 Train + 4 Rollout` Recipe)
+## 🔧 Training
 
-### Release Training Configuration Summary
+### Default Recipe Settings
 
 | Setting | DEAL-WS | DEAL-RS |
 |---|---|---|
-| **GPU Topology (Single 8-GPU Node)** | **4 train (`TP=4`) + 4 rollout (`4×TP=1`)** | **4 train (`TP=4`) + 4 rollout (`4×TP=1`)** |
 | **Rollout Group Structure** | **1 GT anchor + 7 SR** (`K=7`, 8 total) | **1 GT anchor + 7 SR** (`K=7`, 8 total) |
 | **GT Judge Scope** | Anchor-only (`gt_scope=anchor_only`) | Anchor-only (`gt_scope=anchor_only`) |
 | **Deliverable Hardgate** | **Enabled** (`CLAWGYM_ARTIFACT_VALIDITY_GATE=1`) | Enabled |
 | **Tool-Result Microcompact** | **Enabled** (`NANOBOT_MICROCOMPACT_ENABLED=1`) | **Disabled** (`NANOBOT_MICROCOMPACT_ENABLED=0`) |
 | **Self-Reward Repeats** | 3 sessions (median valid score) | 3 sessions (median valid score) |
-| **Online Stream / Rollout Steps** | 2,000 tasks (125 steps, final `step-124`) | 1,800 tasks (113 steps, final `step-112`) |
+| **Online / Test Tasks** | 2,000 / 200 | 1,800 / 200 |
 | **Context / Max Output** | 64K / 8K | 72K / 16K (eval: 80K / 16K) |
 | **Supported Backbones (`MODEL`)** | `gemma4-e4b-it`, `qwen3.5-9b` | `gemma4-e4b-it`, `qwen3.5-9b` |
 
-### Step A: Host the Frozen Self-Reward Policy ($\pi_{\theta_0}$)
+> **GPU Allocation**: The bundled recipes under `configs/*.recipe.json` default to a single-node 8-GPU split (`TRAIN_GPUS=0,1,2,3` + `ROLLOUT_GPUS=4,5,6,7`), with the frozen self-reward policy $\pi_{\theta_0}$ and external GT judge accessed via OpenAI-compatible HTTP(S) endpoints. You can adjust `TRAIN_GPUS`, `ROLLOUT_GPUS`, and recipe parallelism/engine settings to match other GPU topologies or multi-node setups.
 
-Serve the frozen initial model (`google/gemma-4-E4B-it` or `Qwen/Qwen3.5-9B`) on a separate GPU/host so all 8 GPUs on the training node remain dedicated to `TRAIN_GPUS=0,1,2,3` and `ROLLOUT_GPUS=4,5,6,7`:
+### Step A: Host the Frozen Self-Reward Policy ($\pi_{\theta_0}$)
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 bash scripts/serve_frozen_model.sh \
@@ -331,7 +291,6 @@ printf '%s\n' 'YOUR_GT_JUDGE_API_KEY' > ./secrets/gt-api-key
 printf '%s\n' 'local-frozen-no-auth' > ./secrets/self-reward-api-key
 chmod 600 ./secrets/gt-api-key ./secrets/self-reward-api-key
 
-# Copy template for DEAL-RS or DEAL-WS
 cp configs/deal-rs.env.example configs/deal-rs.local.env
 chmod 600 configs/deal-rs.local.env
 ```
@@ -344,10 +303,10 @@ Edit `MODEL` (`gemma4-e4b-it` or `qwen3.5-9b`), `BASE_MODEL`, `DATA_DIR`, `RUN_D
 # 1. Verify config & optionally probe live self-reward / GT judge endpoints
 python3 scripts/verify_env.py --mode all --config configs/deal-rs.local.env --probe-endpoints
 
-# 2. Native CPU preflight (validates 4+4 recipe, 1 GT + 7 SR contract, and CLI rendering)
+# 2. CPU preflight (validates recipe, 1 GT + 7 SR contract, and CLI rendering)
 bash scripts/launch.sh --config configs/deal-rs.local.env --check
 
-# 3. Launch 8-GPU asynchronous SRE training
+# 3. Launch asynchronous SRE training
 bash scripts/launch.sh --config configs/deal-rs.local.env
 
 # 4. Resume cleanly from the latest committed HF checkpoint + dataset cursor if interrupted
@@ -359,14 +318,10 @@ bash scripts/resume_latest.sh --config configs/deal-rs.local.env
 <a id="workspace-demos"></a>
 ## 🗂️ Workspace Demos (All 4 Agent Roles)
 
-To inspect the exact directory scaffolds, system/rubric prompts, JSON schemas, deterministic hardgate outputs, and strict **information-isolation boundaries** across all four agents (**`01_exec_agent`**, **`02_gt_judge_agent`**, **`03_self_rubric_agent`**, and **`04_self_scoring_agent`**) on both **DEAL-WS** and **DEAL-RS**, see [`examples/workspace_demos/README.md`](examples/workspace_demos/README.md):
+Self-contained workspace layouts illustrating all four agent roles (**`01_exec_agent`**, **`02_gt_judge_agent`**, **`03_self_rubric_agent`**, and **`04_self_scoring_agent`**) and their information-isolation boundaries are provided in [`examples/workspace_demos/README.md`](examples/workspace_demos/README.md):
 
 ```bash
-# Run all 21 contract & information-isolation checks
 python3 scripts/build_workspace_demos.py --verify
-
-# Materialize fresh copies into a custom directory and verify
-python3 scripts/build_workspace_demos.py --materialize --verify --output /tmp/sre-demos
 ```
 
 ---
@@ -376,34 +331,11 @@ python3 scripts/build_workspace_demos.py --materialize --verify --output /tmp/sr
 
 ```text
 .
-├── assets/                                 # Overview diagrams & experimental result plots
-├── configs/
-│   ├── deal-rs-{gemma4,qwen35}.recipe.json # DEAL-RS recipes (4+4 GPUs, 1 GT + 7 SR)
-│   ├── deal-ws-{gemma4,qwen35}.recipe.json # DEAL-WS recipes (4+4 GPUs, hardgate, 1 GT + 7 SR)
-│   ├── deal-ws-eval-personas.json          # Scenario persona mapping for DEAL-WS evaluation
-│   ├── deal-{rs,ws}.env.example            # Local .env templates
-│   ├── reward-service.deal-{rs,ws}.template.json
-│   ├── requirements-python.txt
-│   └── constraints-cu129.txt
-├── runtime/
-│   ├── run_core.sh                         # Core Slime + Polar + Ray async training entrypoint
-│   ├── train_async.py                      # Asynchronous rollout & policy update driver
-│   ├── portable_contract.py                # Unified 4+4 & 1 GT + 7 SR recipe validator
-│   ├── sample_contract.py                  # Token / mask / logprob consistency validator
-│   ├── aligned_eval_recovery.py            # Failure=0 / 200-task denominator eval adapter
-│   ├── judge_gate/                         # Request concurrency gate & history budget
-│   └── ws_judge/                           # DEAL-WS native GT judge sidecar, proxy, & inspector
-├── scripts/
-│   ├── install.sh                          # Linux CUDA 12.9 / Python 3.12 installer
-│   ├── verify_env.py / doctor.py           # CPU, 8-GPU, config, & endpoint verifiers
-│   ├── prepare_data.py                     # Materialize trxcc2002/DEAL-RS & DEAL-WS locally
-│   ├── serve_frozen_model.sh               # SGLang server launcher for student / pi_theta_0 / judge
-│   ├── configure_run.py                    # Isolated per-attempt config & chmod-600 secret manager
-│   ├── launch.sh / run.py                  # Single-host 4+4 launcher (--check for CPU preflight)
-│   ├── resume_latest.sh / resume_latest.py # Exact-cursor checkpoint resumption
-│   ├── eval_deal_rs.py / eval_deal_ws.py   # Standalone 200-task held-out evaluators
-│   └── build_workspace_demos.py            # Materialize & verify 4-role workspace demos
-├── examples/workspace_demos/               # Self-contained DEAL-WS & DEAL-RS 4-agent demos
+├── assets/                                 # Overview diagrams, plots, & local SVG badges
+├── configs/                                # DEAL-RS & DEAL-WS recipes, .env templates, & constraints
+├── runtime/                                # Async Slime + Polar training driver, contracts, & WS judge sidecar
+├── scripts/                                # Install, data prep, serving, training launch/resume, & standalone evals
+├── examples/workspace_demos/               # Synthetic DEAL-WS & DEAL-RS 4-agent workspace demos
 ├── vendor/                                 # Integrated RL & harness stack (prorl, reward, nanobot, slime, nemo-rl, megatron-bridge)
 └── tests/test_release.py                   # CPU regression, contract, & release-hygiene test suite
 ```
@@ -413,9 +345,9 @@ python3 scripts/build_workspace_demos.py --materialize --verify --output /tmp/sr
 <a id="acknowledgement"></a>
 ## ✨ Acknowledgement
 
-This work was supported by Nanjing University, Shanghai Artificial Intelligence Laboratory, Shanghai Jiao Tong University, Beijing Jiaotong University, Harbin Institute of Technology, Nanyang Technological University, and The Chinese University of Hong Kong.
+This work was supported by the Shanghai Artificial Intelligence Laboratory.
 
-This codebase builds upon strong open-source agent and reinforcement learning infrastructure, including [slime](https://github.com/THUDM/slime), [nanobot](https://github.com/HKUDS/nanobot), [NVIDIA NeMo RL](https://github.com/NVIDIA-NeMo/RL), [Megatron-Bridge / Megatron-LM](https://github.com/NVIDIA/Megatron-LM), [SGLang](https://github.com/sgl-project/sglang), and [Workspace-Bench](https://huggingface.co/datasets/Workspace-Bench/Workspace-Bench-Workspaces). Upstream license notices are preserved in [`NOTICE`](NOTICE) and their respective `vendor/` directories.
+This codebase builds upon open-source agent and reinforcement learning infrastructure, including [slime](https://github.com/THUDM/slime), [nanobot](https://github.com/HKUDS/nanobot), [NVIDIA NeMo RL](https://github.com/NVIDIA-NeMo/RL), [Megatron-Bridge / Megatron-LM](https://github.com/NVIDIA/Megatron-LM), [SGLang](https://github.com/sgl-project/sglang), and [Workspace-Bench](https://huggingface.co/datasets/Workspace-Bench/Workspace-Bench-Workspaces). Upstream license notices are preserved in [`NOTICE`](NOTICE) and their respective `vendor/` directories.
 
 ---
 
